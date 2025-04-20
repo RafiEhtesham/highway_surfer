@@ -5,12 +5,11 @@ from models.player import drawPlayer   # Import all models from models.py
 from models.text import draw_text  # Import all models from text.py
 
 # Camera-related variables
-camera_pos = (0,500,500)
+camera_pos = (0, 500, 500)
+look_at = (0, 0, 0)  # Target point for the camera to look at
 
 fovY = 120  # Field of view
 GRID_LENGTH = 600  # Length of grid lines
-
-
 
 
 def draw_shapes():
@@ -56,9 +55,10 @@ def setupCamera():
 
     # Extract camera position and look-at target
     x, y, z = camera_pos
+    look_at_x, look_at_y, look_at_z = look_at
     # Position the camera and set its orientation
     gluLookAt(x, y, z,  # Camera position
-              0, 0, 0,  # Look-at target
+              look_at_x, look_at_y, look_at_z,  # Look-at target
               0, 0, 1)  # Up vector (z-axis)
     
 
@@ -81,7 +81,7 @@ def showScreen():
     # Clear color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()  # Reset modelview matrix
-    glViewport(0, 0, 1000, 800)  # Set viewport size
+    glViewport(0, 0, 600, 900)  # Set viewport size
 
     setupCamera()  # Configure camera perspective
 
@@ -133,7 +133,7 @@ def main():
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # Double buffering, RGB color, depth test
     glutInitWindowSize(600, 900)  # Window size
-    glutInitWindowPosition(0, 0)  # Window position
+    glutInitWindowPosition(100, 20)  # Window position
     wind = glutCreateWindow(b"3D OpenGL Intro")  # Create the window
 
     glutDisplayFunc(showScreen)  # Register display function
