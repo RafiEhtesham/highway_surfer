@@ -3,12 +3,13 @@ from OpenGL.GLUT import *  # Import all GLUT functions
 from OpenGL.GLU import *
 from models.player import drawPlayer   # Import all models from models.py
 from models.text import draw_text  # Import all models from text.py
+from math import cos, sin, radians  # Import math functions for calculations
 
 # Camera-related variables
-camera_pos = (0, 500, 500)
+camera_pos = (0, 250, 250)
 look_at = (0, 0, 0)  # Target point for the camera to look at
 
-fovY = 120  # Field of view
+fovY = 90  # Field of view
 GRID_LENGTH = 600  # Length of grid lines
 
 
@@ -28,9 +29,30 @@ def specialKeyListener(key, x, y):
     """
     Handles special key inputs (arrow keys) for adjusting the camera angle and height.
     """
-    # Move camera up (UP arrow key)
-    # if key == GLUT_KEY_UP:
+    global camera_pos
 
+    x, y, z = camera_pos
+    # Move camera up (UP arrow key)
+    if key == GLUT_KEY_UP:
+        z += 10  # Small angle decrement for smooth movement
+
+    # # Move camera down (DOWN arrow key)
+    if key == GLUT_KEY_DOWN:
+        z -= 10  # Small angle increment for smooth movement
+
+    # moving camera left (LEFT arrow key)
+    if key == GLUT_KEY_LEFT:
+        angle = -1  # Angle decrement for rotation to the left
+        x = x * cos(radians(angle)) - y * sin(radians(angle))
+        y = x * sin(radians(angle)) + y * cos(radians(angle))
+        
+    # moving camera right (RIGHT arrow key)
+    if key == GLUT_KEY_RIGHT:
+        angle = 1  # Angle increment for rotation
+        x = x * cos(radians(angle)) - y * sin(radians(angle))
+        y = x * sin(radians(angle)) + y * cos(radians(angle))
+
+    camera_pos = (x, y, z)
 
 
 def mouseListener(button, state, x, y):
