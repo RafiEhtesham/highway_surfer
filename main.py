@@ -1,7 +1,8 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *  # Import all GLUT functions
-from OpenGL.GLUT.fonts import GLUT_BITMAP_HELVETICA_18  # Explicitly import the font
 from OpenGL.GLU import *
+from models.player import drawPlayer   # Import all models from models.py
+from models.text import draw_text  # Import all models from text.py
 
 # Camera-related variables
 camera_pos = (0,500,500)
@@ -9,53 +10,12 @@ camera_pos = (0,500,500)
 fovY = 120  # Field of view
 GRID_LENGTH = 600  # Length of grid lines
 
-def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
-    glColor3f(1,1,1)
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
-    
-    # Set up an orthographic projection that matches window coordinates
-    gluOrtho2D(0, 1000, 0, 800)  # left, right, bottom, top
 
-    
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    glLoadIdentity()
-    
-    # Draw text at (x, y) in screen coordinates
-    glRasterPos2f(x, y)
-    for ch in text:
-        glutBitmapCharacter(font, ord(ch))
-    
-    # Restore original projection and modelview matrices
-    glPopMatrix()
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
-    glMatrixMode(GL_MODELVIEW)
 
 
 def draw_shapes():
 
-    glPushMatrix()  # Save the current matrix state
-    glColor3f(1, 0, 0)
-    glTranslatef(0, 0, 0)  
-    glutSolidCube(60) # Take cube size as the parameter
-    glTranslatef(0, 0, 100) 
-    glColor3f(0, 1, 0)
-    glutSolidCube(60) 
-
-    glColor3f(1, 1, 0)
-    gluCylinder(gluNewQuadric(), 40, 5, 150, 10, 10)  # parameters are: quadric, base radius, top radius, height, slices, stacks
-    glTranslatef(100, 0, 100) 
-    glRotatef(90, 0, 1, 0)  # parameters are: angle, x, y, z
-    gluCylinder(gluNewQuadric(), 40, 5, 150, 10, 10)
-
-    glColor3f(0, 1, 1)
-    glTranslatef(300, 0, 100) 
-    gluSphere(gluNewQuadric(), 80, 10, 10)  # parameters are: quadric, radius, slices, stacks
-
-    glPopMatrix()  # Restore the previous matrix state
+    drawPlayer()
 
 def keyboardListener(key, x, y):
     """
