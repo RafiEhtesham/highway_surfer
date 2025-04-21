@@ -34,21 +34,21 @@ def specialKeyListener(key, x, y):
     x, y, z = camera_pos
     # Move camera up (UP arrow key)
     if key == GLUT_KEY_UP:
-        z += 10  # Small angle decrement for smooth movement
+        z += 50  # Small angle decrement for smooth movement
 
     # # Move camera down (DOWN arrow key)
     if key == GLUT_KEY_DOWN:
-        z -= 10  # Small angle increment for smooth movement
+        z -= 50  # Small angle increment for smooth movement
 
     # moving camera left (LEFT arrow key)
     if key == GLUT_KEY_LEFT:
-        angle = -1  # Angle decrement for rotation to the left
+        angle = -10  # Angle decrement for rotation to the left
         x = x * cos(radians(angle)) - y * sin(radians(angle))
         y = x * sin(radians(angle)) + y * cos(radians(angle))
         
     # moving camera right (RIGHT arrow key)
     if key == GLUT_KEY_RIGHT:
-        angle = 1  # Angle increment for rotation
+        angle = 10  # Angle increment for rotation
         x = x * cos(radians(angle)) - y * sin(radians(angle))
         y = x * sin(radians(angle)) + y * cos(radians(angle))
 
@@ -109,10 +109,10 @@ def showScreen():
     setupCamera()  # Configure camera perspective
 
     # Draw a random points
-    glPointSize(20)
-    glBegin(GL_POINTS)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
-    glEnd()
+    # glPointSize(20)
+    # glBegin(GL_POINTS)
+    # glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+    # glEnd()
 
     # Draw the grid (game floor)
     glBegin(GL_QUADS)
