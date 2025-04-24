@@ -3,7 +3,13 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
 
-def drawPlayer():
+def drawPlayer(player_pos):
+
+    x, y, z = player_pos  # Unpack player position
+
+    glPushMatrix()  # Save the current matrix state
+    glTranslatef(x, y, z)  # Move to player position
+
     glPushMatrix()  # Save the current matrix state
     # glColor3f(1, 0, 0)
     # glTranslatef(0, 0, 0)  
@@ -97,5 +103,6 @@ def drawPlayer():
     glRotatef(45, 1, 0, 0)  # Rotate the hands to face forward
     glutSolidCube(50)  # Draw the hands
 
+    glPopMatrix()  # Restore the previous matrix state
     glPopMatrix()  # Restore the previous matrix state
 
