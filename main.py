@@ -3,7 +3,7 @@ from OpenGL.GLUT import *  # Import all GLUT functions
 from OpenGL.GLU import *
 from models.player import drawPlayer   # Import all models from models.py
 from models.text import draw_text  # Import all models from text.py
-from math import cos, sin, radians  # Import math functions for calculations
+from math import cos, sin, radians  # Import math functions for angle calculations
 
 # Camera-related variables
 camera_pos = (0, 250, 250)
@@ -30,6 +30,29 @@ def specialKeyListener(key, x, y):
     Handles special key inputs (arrow keys) for adjusting the camera angle and height.
     """
     global camera_pos
+
+    x, y, z = camera_pos
+    # Move camera up (UP arrow key)
+    if key == GLUT_KEY_UP:
+        z += 50  # Small angle decrement for smooth movement
+
+    # # Move camera down (DOWN arrow key)
+    if key == GLUT_KEY_DOWN:
+        z -= 50  # Small angle increment for smooth movement
+
+    # moving camera left (LEFT arrow key)
+    if key == GLUT_KEY_LEFT:
+        angle = -10  # Angle decrement for rotation to the left
+        x = x * cos(radians(angle)) - y * sin(radians(angle))
+        y = x * sin(radians(angle)) + y * cos(radians(angle))
+        
+    # moving camera right (RIGHT arrow key)
+    if key == GLUT_KEY_RIGHT:
+        angle = 10  # Angle increment for rotation
+        x = x * cos(radians(angle)) - y * sin(radians(angle))
+        y = x * sin(radians(angle)) + y * cos(radians(angle))
+
+    camera_pos = (x, y, z)
 
     x, y, z = camera_pos
     # Move camera up (UP arrow key)
@@ -108,10 +131,10 @@ def showScreen():
     setupCamera()  # Configure camera perspective
 
     # Draw a random points
-    glPointSize(20)
-    glBegin(GL_POINTS)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
-    glEnd()
+    # glPointSize(20)
+    # glBegin(GL_POINTS)
+    # glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+    # glEnd()
 
     # Draw the grid (game floor)
     glBegin(GL_QUADS)
