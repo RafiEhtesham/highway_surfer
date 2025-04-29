@@ -25,6 +25,7 @@ is_jumping = False  # Flag to track if the player is jumping
 jump_start_time = None  # Start time of the jump
 jump_duration = 0.7  # Duration of the jump in seconds
 jump_height = 200  # Maximum height of the jump
+is_forced_landing = False  # Flag to track if the player is forced to land
 
 # Moving related variables
 is_moving = False  # Flag to track if the player is moving left or right
@@ -32,10 +33,19 @@ move_start_time = None  # Start time of the movement
 move_duration = 0.2  # Duration of the left/right movement in seconds
 move_target_x = None  # Target X position for the movement
 
+# Sliding related variables
+is_sliding = False  # Flag to track if the player is sliding
+slide_start_time = None  # Start time of the slide
+slide_duration = 0.5  # Duration of the slide in seconds
+slide_rotation_angle = 0  # Current rotation angle during the slide
+max_slide_rotation = 90  # Maximum rotation angle during the slide
+sliding_speed = 5 # Speed of the slide rotation
 
 def draw_shapes():
+    
+    global is_sliding, slide_rotation_angle   
 
-    drawPlayer(player_pos)
+    drawPlayer(player_pos, is_sliding, slide_rotation_angle)
 
 def updateDeltaTime():
     """
@@ -50,7 +60,7 @@ def keyboardListener(key, x, y):
     """
     Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
     """
-    global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x
+    global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time, slide_rotation_angle, is_forced_landing
 
     # Move left (A key)
     if key == b'a' and not is_moving:
@@ -74,6 +84,19 @@ def keyboardListener(key, x, y):
     if key == b'w' and not is_jumping:
         is_jumping = True
         jump_start_time = time.time()  # Record the start time of the jump
+        if is_sliding:
+            # End the slide if jumping
+            is_sliding = False
+            slide_rotation_angle = 0  # Reset rotation angle
+
+    # Slide (S key)
+    if key == b's' and not is_sliding:
+        if is_jumping:
+            # Trigger a smooth forced landing
+            is_forced_landing = True
+        else:
+            is_sliding = True
+            slide_start_time = time.time()  # Record the start time of the slide
 
 def updatePlayerMovement():
     """
@@ -101,23 +124,47 @@ def updatePlayerJump():
     """
     Updates the player's position during a jump.
     """
-    global player_pos, is_jumping, jump_start_time
+    global player_pos, is_jumping, jump_start_time, is_forced_landing
 
     if not is_jumping:
         return  # No jump in progress
 
     elapsed_time = time.time() - jump_start_time
-    if elapsed_time >= jump_duration:
-        # End the jump and reset the player's vertical position
+    if elapsed_time >= jump_duration or is_forced_landing:
+        # Smoothly return to the ground if forced landing is triggered
         x, y, z = player_pos
-        player_pos = (x, y, 0)
-        is_jumping = False
+        descent_time = elapsed_time / jump_duration if is_forced_landing else 0
+        player_pos = (x, y, z * (1 - descent_time))
+        if z <= 0.1:  # Close enough to the ground
+            player_pos = (x, y, 0)
+            is_jumping = False
+            is_forced_landing = False
     else:
         # Calculate the vertical position using a parabolic trajectory
         t = elapsed_time / jump_duration  # Normalized time (0 to 1)
         height = jump_height * (1 - (2 * t - 1) ** 2)  # Parabolic equation
         x, y, z = player_pos
         player_pos = (x, y, height)
+
+def updatePlayerSlide():
+    """
+    Updates the player's state during a slide.
+    """
+    global is_sliding, slide_start_time, slide_rotation_angle, sliding_speed
+
+    if not is_sliding:
+        return  # No slide in progress
+
+    elapsed_time = time.time() - slide_start_time
+    if elapsed_time >= slide_duration:
+        # End the slide and reset the player's rotation
+        is_sliding = False
+        slide_rotation_angle = 0  # Reset rotation angle
+    else:
+        # Gradually increase the rotation angle during the slide
+        t = elapsed_time / slide_duration  # Normalized time (0 to 1)
+        new_slide_rotation_angle = t * max_slide_rotation * sliding_speed
+        slide_rotation_angle = min(new_slide_rotation_angle, max_slide_rotation)
 
 def specialKeyListener(key, x, y):
     """
@@ -179,17 +226,17 @@ def setupCamera():
               0, 0, 1)  # Up vector (z-axis)
     
 
-
 def idle():
     """
     Idle function that runs continuously:
     - Updates delta time for smooth movement.
-    - Updates player position for smooth lane transitions and jumps.
+    - Updates player position for smooth lane transitions, jumps, and slides.
     - Triggers screen redraw for real-time updates.
     """
     updateDeltaTime()  # Update delta time
     updatePlayerMovement()  # Update the player's left/right movement
     updatePlayerJump()  # Update the player's jump
+    updatePlayerSlide()  # Update the player's slide
     glutPostRedisplay()  # Ensure the screen updates with the latest changes
 
 
