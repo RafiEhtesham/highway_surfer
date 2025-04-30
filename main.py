@@ -2,9 +2,11 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *  # Import all GLUT functions
 from OpenGL.GLU import *
 from models.player import drawPlayer   # Import all models from models.py
+from models.barrier import drawbarrier1  # Import all models from barrier.py
 from models.text import draw_text  # Import all models from text.py
 from math import cos, sin, radians  # Import math functions for angle calculations
 import time
+
 
 
 # Camera-related variables
@@ -34,6 +36,10 @@ move_target_x = None  # Target X position for the movement
 
 
 def draw_shapes():
+
+    global GRID_WIDTH, player_pos
+
+    drawbarrier1((0, -400, 0), GRID_WIDTH)  # Draw the barrier at the player's position
 
     drawPlayer(player_pos)
 
