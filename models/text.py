@@ -3,7 +3,7 @@ from OpenGL.GLUT import *
 from OpenGL.GLUT.fonts import GLUT_BITMAP_HELVETICA_18  # Explicitly import the font
 from OpenGL.GLU import *
 
-
+#ahnaf the 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glColor3f(1,1,1)
     glMatrixMode(GL_PROJECTION)
