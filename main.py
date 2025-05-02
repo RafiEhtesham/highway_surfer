@@ -81,14 +81,14 @@ def keyboardListener(key, x, y):
     
 
     # Move left (A key)
-    if key == b'a' and not is_moving and player_track > 0:
+    if key == b'd' and not is_moving and player_track > 0:
         player_track -= 1
         is_moving = True
         move_start_time = time.time()
         move_target_x = (player_track - 1) * 400  # Adjusted to align with lane centers: -400, 0, 400
 
     # Move right (D key)
-    if key == b'd' and not is_moving and player_track < 2:
+    if key == b'a' and not is_moving and player_track < 2:
         player_track += 1
         is_moving = True
         move_start_time = time.time()
@@ -147,7 +147,7 @@ def updatePlayerJump():
     """
     Updates the player's position during a jump.
     """
-    global player_pos, is_jumping, jump_start_time
+    global player_pos, is_jumping, jump_start_time, is_forced_landing, jump_duration, jump_height
 
     if not is_jumping:
         return  # No jump in progress
