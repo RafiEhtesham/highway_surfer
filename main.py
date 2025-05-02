@@ -2,9 +2,12 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *  # Import all GLUT functions
 from OpenGL.GLU import *
 from models.player import drawPlayer   # Import all models from models.py
+from models.barrier import drawbarrier1  # Import all models from barrier.py
+from models.barrier import drawbarrier2  # Import all models from barrier.py
 from models.text import draw_text  # Import all models from text.py
 from math import cos, sin, radians  # Import math functions for angle calculations
 import time
+
 
 
 # Camera-related variables
@@ -42,10 +45,17 @@ max_slide_rotation = 90  # Maximum rotation angle during the slide
 sliding_speed = 5 # Speed of the slide rotation
 
 def draw_shapes():
-    
-    global is_sliding, slide_rotation_angle   
 
-    drawPlayer(player_pos, is_sliding, slide_rotation_angle)
+    global GRID_WIDTH, player_pos 
+
+    drawbarrier1((0, -200, 0), GRID_WIDTH, lane_index=1)  # Draw the barrier at the player's position
+
+    #drawbarrier2((0, -200, 0), GRID_WIDTH, lane_index=1)  # Right lane
+
+    drawPlayer(player_pos)
+
+    
+
 
 def updateDeltaTime():
     """
