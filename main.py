@@ -46,14 +46,13 @@ sliding_speed = 5 # Speed of the slide rotation
 
 def draw_shapes():
 
-    global GRID_WIDTH, player_pos 
+    global GRID_WIDTH, player_pos, is_sliding, slide_rotation_angle
 
     drawbarrier1((0, -200, 0), GRID_WIDTH, lane_index=1)  # Draw the barrier at the player's position
 
     #drawbarrier2((0, -200, 0), GRID_WIDTH, lane_index=1)  # Right lane
 
-    drawPlayer(player_pos)
-
+    drawPlayer(player_pos, is_sliding, slide_rotation_angle)
     
 
 
