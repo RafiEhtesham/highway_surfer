@@ -3,6 +3,7 @@ from OpenGL.GLUT import *  # Import all GLUT functions
 from OpenGL.GLU import *
 from models.player import drawPlayer   # Import all models from models.py
 from models.barrier import drawbarrier1  # Import all models from barrier.py
+from models.barrier import drawbarrier2  # Import all models from barrier.py
 from models.text import draw_text  # Import all models from text.py
 from math import cos, sin, radians  # Import math functions for angle calculations
 import time
@@ -37,11 +38,16 @@ move_target_x = None  # Target X position for the movement
 
 def draw_shapes():
 
-    global GRID_WIDTH, player_pos
+    global GRID_WIDTH, player_pos 
 
-    drawbarrier1((0, -400, 0), GRID_WIDTH)  # Draw the barrier at the player's position
+    drawbarrier1((0, -200, 0), GRID_WIDTH, lane_index=1)  # Draw the barrier at the player's position
+
+    #drawbarrier2((0, -200, 0), GRID_WIDTH, lane_index=1)  # Right lane
 
     drawPlayer(player_pos)
+
+    
+
 
 def updateDeltaTime():
     """
