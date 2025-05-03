@@ -334,14 +334,31 @@ def specialKeyListener(key, x, y):
 
 def mouseListener(button, state, x, y):
     """
-    Handles mouse inputs for toggling pause/play and other interactions.
+    Handles mouse inputs for toggling pause/play and restarting the game.
     """
-    global is_paused
+    global is_paused, game_over, player_pos, obstacles, score, game_speed, obstacle_spawn_interval
 
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         # Convert mouse coordinates to normalized device coordinates
-        mouse_x = (x / 600) * 2 - 1  # Assuming window width is 600
-        mouse_y = -((y / 900) * 2 - 1)  # Assuming window height is 900
+        mouse_x = 1 - (x / 600) * 2  # Invert X coordinate for leftmost mapping
+        mouse_y = -((y / 900) * 2 - 1)  # Keep Y coordinate as is
+
+        # Check if the click is within the restart button area
+        restart_center_x = -0.9  # Center of the restart button (left side after inversion)
+        restart_center_y = 0.95  # Vertically aligned with the white bar
+        restart_width = 0.1  # Width of the restart button
+        restart_height = 0.1  # Height of the restart button
+
+        if (restart_center_x - restart_width / 2 <= mouse_x <= restart_center_x + restart_width / 2 and
+                restart_center_y - restart_height / 2 <= mouse_y <= restart_center_y + restart_height / 2):
+            # Reset the game state
+            player_pos = (0, 0, 0)  # Reset player position
+            obstacles = []  # Clear all obstacles
+            score = 0  # Reset score
+            game_speed = 1.0  # Reset game speed
+            obstacle_spawn_interval = 1  # Reset obstacle spawn interval
+            game_over = False  # Reset game over flag
+            print("[DEBUG] Game restarted via restart button.")
 
         # Check if the click is within the pause/play button area
         center_x = 0  # Center of the pause/play button

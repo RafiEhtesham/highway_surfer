@@ -104,7 +104,7 @@ def draw_restart_arrow():
 
     glColor3f(1, 0, 0)  # Set color to red
 
-    print(f"Drawing restart button at center: ({center_x}, {center_y})")  # Debug: Print arrow center
+    #print(f"Drawing restart button at center: ({center_x}, {center_y})")  # Debug: Print arrow center
 
     # Draw the horizontal shaft of the arrow
     midpoint_line(center_x + shaft_length, center_y, center_x - shaft_length, center_y)
