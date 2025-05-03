@@ -54,6 +54,11 @@ score = 0  # Player's score
 game_over = False  # Flag to track if the game is over
 game_speed = 1.0  # Multiplier for obstacle speed, starts at 1.0
 
+# First-person mode variables
+is_first_person = False  # Flag to track if first-person mode is active
+default_camera_pos = camera_pos  # Store the default camera position
+default_look_at = look_at  # Store the default look-at target
+
 def draw_shapes():
 
     global GRID_WIDTH, player_pos, is_sliding, slide_rotation_angle   
@@ -164,13 +169,25 @@ def keyboardListener(key, x, y):
     """
     Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
     """
-    global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time, slide_rotation_angle, is_forced_landing, game_over
+    global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time, slide_rotation_angle, is_forced_landing, game_over, is_first_person, camera_pos, look_at
 
     if game_over and key == b'r':
         resetGame()  # Restart the game
         return
 
     print(f"[DEBUG] Key pressed: {key}")  # Debug
+
+    # Toggle first-person mode (V key)
+    if key == b'v':
+        is_first_person = not is_first_person
+        if is_first_person:
+            camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)  # Move camera to player's head
+            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])  # Look forward where obstacles are coming from
+            print(f"[DEBUG] First-person mode activated. camera_pos: {camera_pos}, look_at: {look_at}")  # Debug
+        else:
+            camera_pos = default_camera_pos  # Revert to default camera position
+            look_at = default_look_at  # Revert to default look-at target
+            print(f"[DEBUG] First-person mode deactivated. camera_pos: {camera_pos}, look_at: {look_at}")  # Debug
 
     # Move left (A key)
     if key == b'a' and not is_moving:
@@ -218,7 +235,7 @@ def updatePlayerMovement():
     """
     Updates the player's position during left/right movement.
     """
-    global player_pos, is_moving, move_start_time, move_target_x
+    global player_pos, is_moving, move_start_time, move_target_x, camera_pos, look_at
 
     if not is_moving:
         return  # No movement in progress
@@ -230,6 +247,10 @@ def updatePlayerMovement():
         x, y, z = player_pos
         player_pos = (move_target_x, y, z)
         is_moving = False
+        # Update camera position in first-person mode
+        if is_first_person:
+            camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
+            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])  # Adjust look_at to match player's lane
         print(f"[DEBUG] Movement ended. player_pos: {player_pos}")  # Debug
     else:
         # Interpolate the X position based on elapsed time
@@ -237,13 +258,17 @@ def updatePlayerMovement():
         start_x, y, z = player_pos
         x = start_x + t * (move_target_x - start_x)
         player_pos = (x, y, z)
+        # Update camera position in first-person mode
+        if is_first_person:
+            camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
+            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])  # Adjust look_at dynamically
         print(f"[DEBUG] Moving. player_pos: {player_pos}")  # Debug
 
 def updatePlayerJump():
     """
     Updates the player's position during a jump.
     """
-    global player_pos, is_jumping, jump_start_time, is_forced_landing
+    global player_pos, is_jumping, jump_start_time, is_forced_landing, camera_pos
 
     if not is_jumping:
         return  # No jump in progress
@@ -260,20 +285,26 @@ def updatePlayerJump():
             player_pos = (x, y, 0)
             is_jumping = False
             is_forced_landing = False
-            print(f"[DEBUG] Jump ended. player_pos: {player_pos}")  # Debug
+        # Update camera position in first-person mode
+        if is_first_person:
+            camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
+        print(f"[DEBUG] Jump ended. player_pos: {player_pos}")  # Debug
     else:
         # Calculate the vertical position using a parabolic trajectory
         t = elapsed_time / jump_duration  # Normalized time (0 to 1)
         height = jump_height * (1 - (2 * t - 1) ** 2)  # Parabolic equation
         x, y, z = player_pos
         player_pos = (x, y, height)
+        # Update camera position in first-person mode
+        if is_first_person:
+            camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
         print(f"[DEBUG] Jumping. player_pos: {player_pos}")  # Debug
 
 def updatePlayerSlide():
     """
     Updates the player's state during a slide.
     """
-    global is_sliding, slide_start_time, slide_rotation_angle, sliding_speed
+    global is_sliding, slide_start_time, slide_rotation_angle, sliding_speed, camera_pos
 
     if not is_sliding:
         return  # No slide in progress
@@ -284,12 +315,22 @@ def updatePlayerSlide():
         # End the slide and reset the player's rotation
         is_sliding = False
         slide_rotation_angle = 0  # Reset rotation angle
+        # Smoothly return the camera to its original position in first-person mode
+        if is_first_person:
+            target_camera_z = player_pos[2] + 200  # Original camera z position
+            current_camera_x, current_camera_y, current_camera_z = camera_pos
+            camera_pos = (current_camera_x, current_camera_y, current_camera_z + (target_camera_z - current_camera_z) * 0.1)
         print(f"[DEBUG] Slide ended. slide_rotation_angle: {slide_rotation_angle}")  # Debug
     else:
         # Gradually increase the rotation angle during the slide
         t = elapsed_time / slide_duration  # Normalized time (0 to 1)
         new_slide_rotation_angle = t * max_slide_rotation * sliding_speed
         slide_rotation_angle = min(new_slide_rotation_angle, max_slide_rotation)
+        # Smoothly shift the camera down in first-person mode
+        if is_first_person:
+            target_camera_z = player_pos[2] + 150  # Shift camera z position down by 50 units
+            current_camera_x, current_camera_y, current_camera_z = camera_pos
+            camera_pos = (current_camera_x, current_camera_y, current_camera_z + (target_camera_z - current_camera_z) * 0.1)
         print(f"[DEBUG] Sliding. slide_rotation_angle: {slide_rotation_angle}")  # Debug
 
 def specialKeyListener(key, x, y):
