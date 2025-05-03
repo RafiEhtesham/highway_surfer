@@ -233,21 +233,13 @@ def check_player_collision():
     # Check collisions with trains
     if train_manager:
         for train in train_manager.trains:
-            if train.track_position == player_track:
-                train_x, train_y, _ = train.get_position()
-                for carriage in train.carriages:
-                    # Train hitbox (tight, based on traincopy.py)
-                    carriage_y = train_y + carriage.position_offset
-                    front_y = carriage_y - carriage.length / 2
-                    back_y = carriage_y + carriage.length / 2
-                    train_half_width = carriage.width / 2  # 90
-                    train_height = carriage.height  # 180 or 240 for tunnel
-                    
-                    # Check x (lane alignment), y (longitudinal), and z (height) overlap
-                    if (abs(player_x - train_x) < player_half_width + train_half_width and
-                        front_y - player_half_length <= player_y <= back_y + player_half_length and
-                        player_z < train_height):
-                        return True, "You were hit by a train!"
+            if train.lane == player_track:  # Changed from track_position to lane
+                train_x = (train.lane - 1) * 400
+                # Simplified collision check using lane alignment
+                if (abs(player_x - train_x) < 100 and
+                    abs(player_y - train.position) < 500 and
+                    player_z < 200):
+                    return True, "You were hit by a train!"
     
     # Check collisions with barriers
     for barrier_y, barrier_lane, barrier_type in barriers:
