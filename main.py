@@ -377,7 +377,7 @@ def mouseListener(button, state, x, y):
     """
     Handles mouse inputs for toggling pause/play and restarting the game.
     """
-    global is_paused, game_over, player_pos, obstacles, score, game_speed, obstacle_spawn_interval
+    global is_paused, game_over, player_pos, obstacles, score, game_speed, obstacle_spawn_interval, is_first_person, camera_pos, look_at
 
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         # Convert mouse coordinates to normalized device coordinates
@@ -399,6 +399,14 @@ def mouseListener(button, state, x, y):
             game_speed = 1.0  # Reset game speed
             obstacle_spawn_interval = 1  # Reset obstacle spawn interval
             game_over = False  # Reset game over flag
+
+            # Switch back to third-person mode if in first-person mode
+            if is_first_person:
+                is_first_person = False
+                camera_pos = default_camera_pos  # Revert to default camera position
+                look_at = default_look_at  # Revert to default look-at target
+                print("[DEBUG] Switched back to third-person mode.")
+
             print("[DEBUG] Game restarted via restart button.")
 
         # Check if the click is within the pause/play button area
@@ -513,6 +521,9 @@ def showScreen():
 
     # Call the draw_ui function to render the white bar at the top
     draw_ui(is_paused)  # Pass the pause/play state to draw_ui
+
+    # Display game info text (player score) under the white UI bar
+    draw_text(10, 730, f"Score: {int(score)}")  # Adjusted position to ensure visibility
 
     # Restore the previous projection and modelview matrices
     glPopMatrix()

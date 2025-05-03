@@ -94,26 +94,24 @@ def convert_to_original_zone(x, y, zone):
 
 def draw_restart_arrow():
     """
-    Draws a leftward-facing restart button at the leftmost end of the white UI bar.
+    Draws a rightward-facing restart button at the rightmost end of the white UI bar.
     """
     # Arrow position and dimensions
-    center_x = -0.9  # Shifted slightly to the right
-    center_y = 0.95   # Vertically aligned with the white bar
+    center_x = 0.9  # Positioned at the rightmost end
+    center_y = 0.95  # Vertically aligned with the white bar
     shaft_length = 0.05  # Length of the horizontal shaft
-    tip_size = 0.03      # Size of the arrow tip
+    tip_size = 0.03  # Size of the arrow tip
 
     glColor3f(1, 0, 0)  # Set color to red
 
-    #print(f"Drawing restart button at center: ({center_x}, {center_y})")  # Debug: Print arrow center
-
     # Draw the horizontal shaft of the arrow
-    midpoint_line(center_x + shaft_length, center_y, center_x - shaft_length, center_y)
+    midpoint_line(center_x - shaft_length, center_y, center_x + shaft_length, center_y)
 
     # Draw the upper tip of the arrow
-    midpoint_line(center_x - shaft_length, center_y, center_x - shaft_length + tip_size, center_y + tip_size)
+    midpoint_line(center_x + shaft_length, center_y, center_x + shaft_length - tip_size, center_y + tip_size)
 
     # Draw the lower tip of the arrow
-    midpoint_line(center_x - shaft_length, center_y, center_x - shaft_length + tip_size, center_y - tip_size)
+    midpoint_line(center_x + shaft_length, center_y, center_x + shaft_length - tip_size, center_y - tip_size)
 
 def draw_pause_button():
     """
