@@ -7,6 +7,7 @@ from models.barrier import drawbarrier2  # Import all models from barrier.py
 from models.text import draw_text  # Import all models from text.py
 from models.trains import drawTrainObstacle  # Import train obstacle drawing function
 from math import cos, sin, radians  # Import math functions for angle calculations
+from models.ui import draw_ui  # Import all models from ui.py
 import time
 import random  # Import random module for obstacle generation
 
@@ -36,6 +37,8 @@ move_start_time = None  # Start time of the movement
 move_duration = 0.2  # Duration of the left/right movement in seconds
 move_target_x = None  # Target X position for the movement
 
+# Add a global flag to track whether the game is paused
+is_paused = False
 # Sliding related variables
 is_sliding = False  # Flag to track if the player is sliding
 slide_start_time = None  # Start time of the slide
@@ -372,10 +375,42 @@ def specialKeyListener(key, x, y):
 
 def mouseListener(button, state, x, y):
     """
-    Handles mouse inputs for firing bullets (left click) and toggling camera mode (right click).
+    Handles mouse inputs for toggling pause/play and restarting the game.
     """
-        # # Left mouse button fires a bullet
-        # if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+    global is_paused, game_over, player_pos, obstacles, score, game_speed, obstacle_spawn_interval
+
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        # Convert mouse coordinates to normalized device coordinates
+        mouse_x = 1 - (x / 600) * 2  # Invert X coordinate for leftmost mapping
+        mouse_y = -((y / 900) * 2 - 1)  # Keep Y coordinate as is
+
+        # Check if the click is within the restart button area
+        restart_center_x = -0.9  # Center of the restart button (left side after inversion)
+        restart_center_y = 0.95  # Vertically aligned with the white bar
+        restart_width = 0.1  # Width of the restart button
+        restart_height = 0.1  # Height of the restart button
+
+        if (restart_center_x - restart_width / 2 <= mouse_x <= restart_center_x + restart_width / 2 and
+                restart_center_y - restart_height / 2 <= mouse_y <= restart_center_y + restart_height / 2):
+            # Reset the game state
+            player_pos = (0, 0, 0)  # Reset player position
+            obstacles = []  # Clear all obstacles
+            score = 0  # Reset score
+            game_speed = 1.0  # Reset game speed
+            obstacle_spawn_interval = 1  # Reset obstacle spawn interval
+            game_over = False  # Reset game over flag
+            print("[DEBUG] Game restarted via restart button.")
+
+        # Check if the click is within the pause/play button area
+        center_x = 0  # Center of the pause/play button
+        center_y = 0.95  # Vertically aligned with the white bar
+        button_width = 0.06  # Width of the button (matches play button width)
+        button_height = 0.07  # Height of the button (matches play button height)
+
+        if (center_x - button_width / 2 <= mouse_x <= center_x + button_width / 2 and
+                center_y - button_height / 2 <= mouse_y <= center_y + button_height / 2):
+            is_paused = not is_paused  # Toggle the pause state
+            print(f"Pause state toggled: {'Paused' if is_paused else 'Playing'}")
 
 def setupCamera():
     """
@@ -463,6 +498,27 @@ def showScreen():
     if game_over:
         draw_text(200, 450, "GAME OVER! Press R to Restart")
 
+    # Display game info text at a fixed screen position
+    #draw_text(10, 770, f"A Random Fixed Position Text")
+    #draw_text(10, 740, f"See how the position and variable change?: ")
+
+    # Switch to orthographic projection for UI rendering
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    glOrtho(-1, 1, -1, 1, -1, 1)  # Ensure this matches the coordinate system in draw_restart_arrow
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+
+    # Call the draw_ui function to render the white bar at the top
+    draw_ui(is_paused)  # Pass the pause/play state to draw_ui
+
+    # Restore the previous projection and modelview matrices
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
     
     drawObstacles()  # Draw dynamic obstacles
     draw_shapes()  # Draw player and static objects
