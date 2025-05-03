@@ -65,26 +65,6 @@ def drawPlayer(player_pos, is_sliding, slide_rotation_angle):
 
     glPushMatrix()  # Save the current matrix state
 
-    # head of the biker
-    glColor3f(1, 0.8, 0.6)  # Set color to skin tone
-    glTranslatef(0, -30, 115)  # Move to the position of the head
-    glutSolidSphere(20, 10, 10)  # Draw the head
-
-    #legs of the biker
-    glColor3f(0, 0, 0.5)  # Set color to dark blue
-    
-    glTranslatef(35, 50, -90) 
-    glScalef(0.25, 0.75, 0.75)  # Scale down the legs
-    glRotatef(-45, 1, 0, 0)  # Rotate the legs to face downwards
-    glScalef(1, 1, 0.65)  # Scale down the legs
-    glutSolidCube(50)
-    glTranslatef(-280, 0, 0)  # Move to the position of the other leg
-    glutSolidCube(50)
-
-    glPopMatrix()  # Restore the previous matrix state
-
-    glPushMatrix()  # Save the current matrix state
-
     # left hand of the biker
     glTranslatef(30, 0, 0)  # Move to the position of the biker's hands
     glColor3f(1, 0.8, 0.6)  # Set color to skin tone
@@ -106,6 +86,26 @@ def drawPlayer(player_pos, is_sliding, slide_rotation_angle):
     glScalef(0.25, 0.25, 1.5)  # Scale down the hands
     glRotatef(45, 1, 0, 0)  # Rotate the hands to face forward
     glutSolidCube(50)  # Draw the hands
+
+    glPopMatrix()  # Restore the previous matrix state
+
+    glPushMatrix()  # Save the current matrix state
+
+    # head of the biker
+    glColor3f(1, 0.8, 0.6)  # Set color to skin tone
+    glTranslatef(0, -30, 115)  # Move to the position of the head
+    glutSolidSphere(20, 10, 10)  # Draw the head
+
+    #legs of the biker
+    glColor3f(0, 0, 0.5)  # Set color to dark blue
+    
+    glTranslatef(35, 50, -90) 
+    glScalef(0.25, 0.75, 0.75)  # Scale down the legs
+    glRotatef(-45, 1, 0, 0)  # Rotate the legs to face downwards
+    glScalef(1, 1, 0.65)  # Scale down the legs
+    glutSolidCube(50)
+    glTranslatef(-280, 0, 0)  # Move to the position of the other leg
+    glutSolidCube(50)
 
     glPopMatrix()  # Restore the previous matrix state
     glPopMatrix()  # Restore the previous matrix state

@@ -392,9 +392,10 @@ def showScreen():
     if game_over:
         draw_text(200, 450, "GAME OVER! Press R to Restart")
 
-    draw_shapes()  # Draw player and static objects
+    
     drawObstacles()  # Draw dynamic obstacles
-
+    draw_shapes()  # Draw player and static objects
+    
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
 
