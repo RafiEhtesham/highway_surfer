@@ -71,6 +71,8 @@ def keyboardListener(key, x, y):
     """
     global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time, slide_rotation_angle, is_forced_landing
 
+    print(f"[DEBUG] Key pressed: {key}")  # Debug
+
     # Move left (A key)
     if key == b'a' and not is_moving:
         x, y, z = player_pos
@@ -79,6 +81,7 @@ def keyboardListener(key, x, y):
             is_moving = True
             move_start_time = time.time()
             move_target_x = target_x
+            print(f"[DEBUG] Moving left. target_x: {target_x}, player_pos: {player_pos}")  # Debug
 
     # Move right (D key)
     if key == b'd' and not is_moving:
@@ -88,24 +91,29 @@ def keyboardListener(key, x, y):
             is_moving = True
             move_start_time = time.time()
             move_target_x = target_x
+            print(f"[DEBUG] Moving right. target_x: {target_x}, player_pos: {player_pos}")  # Debug
 
     # Jump (W key)
     if key == b'w' and not is_jumping:
         is_jumping = True
         jump_start_time = time.time()  # Record the start time of the jump
+        print(f"[DEBUG] Jump initiated. jump_start_time: {jump_start_time}, player_pos: {player_pos}")  # Debug
         if is_sliding:
             # End the slide if jumping
             is_sliding = False
             slide_rotation_angle = 0  # Reset rotation angle
+            print(f"[DEBUG] Slide ended due to jump.")  # Debug
 
     # Slide (S key)
     if key == b's' and not is_sliding:
         if is_jumping:
             # Trigger a smooth forced landing
             is_forced_landing = True
+            print(f"[DEBUG] Forced landing triggered.")  # Debug
         else:
             is_sliding = True
             slide_start_time = time.time()  # Record the start time of the slide
+            print(f"[DEBUG] Slide initiated. slide_start_time: {slide_start_time}")  # Debug
 
 def updatePlayerMovement():
     """
@@ -117,17 +125,20 @@ def updatePlayerMovement():
         return  # No movement in progress
 
     elapsed_time = time.time() - move_start_time
+    print(f"[DEBUG] Movement elapsed_time: {elapsed_time}, move_duration: {move_duration}")  # Debug
     if elapsed_time >= move_duration:
         # End the movement and snap to the target position
         x, y, z = player_pos
         player_pos = (move_target_x, y, z)
         is_moving = False
+        print(f"[DEBUG] Movement ended. player_pos: {player_pos}")  # Debug
     else:
         # Interpolate the X position based on elapsed time
         t = elapsed_time / move_duration  # Normalized time (0 to 1)
         start_x, y, z = player_pos
         x = start_x + t * (move_target_x - start_x)
         player_pos = (x, y, z)
+        print(f"[DEBUG] Moving. player_pos: {player_pos}")  # Debug
 
 def updatePlayerJump():
     """
@@ -139,21 +150,25 @@ def updatePlayerJump():
         return  # No jump in progress
 
     elapsed_time = time.time() - jump_start_time
+    print(f"[DEBUG] Jump elapsed_time: {elapsed_time}, jump_duration: {jump_duration}")  # Debug
     if elapsed_time >= jump_duration or is_forced_landing:
         # Smoothly return to the ground if forced landing is triggered
         x, y, z = player_pos
         descent_time = elapsed_time / jump_duration if is_forced_landing else 0
         player_pos = (x, y, z * (1 - descent_time))
-        if z <= 0.1:  # Close enough to the ground
+        print(f"[DEBUG] Jump landing. player_pos: {player_pos}, is_forced_landing: {is_forced_landing}")  # Debug
+        if z <= 10:  # Close enough to the ground
             player_pos = (x, y, 0)
             is_jumping = False
             is_forced_landing = False
+            print(f"[DEBUG] Jump ended. player_pos: {player_pos}")  # Debug
     else:
         # Calculate the vertical position using a parabolic trajectory
         t = elapsed_time / jump_duration  # Normalized time (0 to 1)
         height = jump_height * (1 - (2 * t - 1) ** 2)  # Parabolic equation
         x, y, z = player_pos
         player_pos = (x, y, height)
+        print(f"[DEBUG] Jumping. player_pos: {player_pos}")  # Debug
 
 def updatePlayerSlide():
     """
@@ -165,15 +180,18 @@ def updatePlayerSlide():
         return  # No slide in progress
 
     elapsed_time = time.time() - slide_start_time
+    print(f"[DEBUG] Slide elapsed_time: {elapsed_time}, slide_duration: {slide_duration}")  # Debug
     if elapsed_time >= slide_duration:
         # End the slide and reset the player's rotation
         is_sliding = False
         slide_rotation_angle = 0  # Reset rotation angle
+        print(f"[DEBUG] Slide ended. slide_rotation_angle: {slide_rotation_angle}")  # Debug
     else:
         # Gradually increase the rotation angle during the slide
         t = elapsed_time / slide_duration  # Normalized time (0 to 1)
         new_slide_rotation_angle = t * max_slide_rotation * sliding_speed
         slide_rotation_angle = min(new_slide_rotation_angle, max_slide_rotation)
+        print(f"[DEBUG] Sliding. slide_rotation_angle: {slide_rotation_angle}")  # Debug
 
 def specialKeyListener(key, x, y):
     """
@@ -181,28 +199,34 @@ def specialKeyListener(key, x, y):
     """
     global camera_pos
 
+    print(f"[DEBUG] Special key pressed: {key}")  # Debug
+
     x, y, z = camera_pos
     # Move camera up (UP arrow key)
     if key == GLUT_KEY_UP:
         z += 50  # Small angle decrement for smooth movement
+        print(f"[DEBUG] Camera moved up. camera_pos: {camera_pos}")  # Debug
 
-    # # Move camera down (DOWN arrow key)
+    # Move camera down (DOWN arrow key)
     if key == GLUT_KEY_DOWN:
         z -= 50  # Small angle increment for smooth movement
+        print(f"[DEBUG] Camera moved down. camera_pos: {camera_pos}")  # Debug
 
-    # moving camera left (LEFT arrow key)
+    # Move camera left (LEFT arrow key)
     if key == GLUT_KEY_LEFT:
         angle = -10  # Angle decrement for rotation to the left
         new_x = x * cos(radians(angle)) - y * sin(radians(angle))
         new_y = x * sin(radians(angle)) + y * cos(radians(angle))
         x, y = new_x, new_y  # Update camera position
+        print(f"[DEBUG] Camera moved left. camera_pos: {camera_pos}")  # Debug
 
-    # moving camera right (RIGHT arrow key)
+    # Move camera right (RIGHT arrow key)
     if key == GLUT_KEY_RIGHT:
         angle = 10  # Angle increment for rotation
         new_x = x * cos(radians(angle)) - y * sin(radians(angle))
         new_y = x * sin(radians(angle)) + y * cos(radians(angle))
         x, y = new_x, new_y
+        print(f"[DEBUG] Camera moved right. camera_pos: {camera_pos}")  # Debug
 
     camera_pos = (x, y, z)
 
