@@ -45,12 +45,14 @@ max_slide_rotation = 90  # Maximum rotation angle during the slide
 sliding_speed = 5 # Speed of the slide rotation
 
 # Game-related variables
+
 obstacles = []  # List to store active obstacles
-obstacle_speed = 200  # Unified speed for all obstacles
+obstacle_speed = 400  # Unified speed for all obstacles
 obstacle_spawn_interval = 1  # Time interval (in seconds) to spawn new obstacles
 last_obstacle_spawn_time = time.time()  # Time when the last obstacle was spawned
 score = 0  # Player's score
 game_over = False  # Flag to track if the game is over
+game_speed = 1.0  # Multiplier for obstacle speed, starts at 1.0
 
 def draw_shapes():
 
@@ -76,35 +78,53 @@ def updateObstacles():
     """
     Updates the positions of obstacles and removes those that go off-screen.
     """
-    global obstacles, score, game_over
+    global obstacles, score, game_over, game_speed, obstacle_spawn_interval
+
+    # Increase game speed and adjust spawn interval based on score
+    if score > 100:
+        game_speed = 1.5
+        obstacle_spawn_interval = 0.9  # Slightly faster spawn rate
+    if score > 300:
+        game_speed = 2
+        obstacle_spawn_interval = 0.8
+    if score > 500:
+        game_speed = 3
+        obstacle_spawn_interval = 0.7
 
     new_obstacles = []
     for obstacle, obstacle_type in obstacles:
         x, y, z = obstacle
         speed = obstacle_speed
         if obstacle_type == "train":
-            speed *= 2  # Increase train speed by 20% for better perception
-        y += speed * delta_time  # Move the obstacle toward the player
+            speed *= 2  # Increase train speed
+        y += speed * delta_time * game_speed  # Apply game speed multiplier
+        # Check if the obstacle has crossed the player
+        if y > player_pos[1] and y < GRID_LENGTH:
+            score += 0.005  # Increment score for dodging the obstacle
+            # print(f"[DEBUG] Obstacle crossed! Score: {score}")
+
         if y < GRID_LENGTH:  # Keep obstacles within the screen
             new_obstacles.append(((x, y, z), obstacle_type))
-        else:
-            score += 1  # Increment score for dodging the obstacle
 
     obstacles = new_obstacles
 
     # Check for collisions
     for obstacle, obstacle_type in obstacles:
-        if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 50:
-            if obstacle_type == "barrier1" and not is_sliding:
+        if obstacle_type == "barrier1" and not is_sliding:
+            if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 50:
                 # Collision with barrier1 if not sliding
                 game_over = True
-                print(f"[DEBUG] Collision with barrier1! Game Over. Final Score: {score}")
-            elif obstacle_type == "barrier2" and not is_jumping:
+                print(f"[DEBUG] Collision with barrier1! Game Over. Final Score: {score}") 
+        
+        elif obstacle_type == "barrier2" and not is_jumping:
+            if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 50:
                 # Collision with barrier2 if not jumping
                 game_over = True
                 print(f"[DEBUG] Collision with barrier2! Game Over. Final Score: {score}")
-            elif obstacle_type == "train":
-                # Collision with train (always fatal)
+
+        elif obstacle_type == "train":
+            if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 300:    
+                # Adjust collision bounds for the train
                 game_over = True
                 print(f"[DEBUG] Collision with train! Game Over. Final Score: {score}")
 
@@ -113,13 +133,13 @@ def drawObstacles():
     Draws all active obstacles on the screen.
     """
     for obstacle, obstacle_type in obstacles:
-        if obstacle_type == "barrier1":
+        if obstacle_type == "train":
+            drawTrainObstacle(obstacle)  # Use drawTrainObstacle for train obstacles
+        elif obstacle_type == "barrier1":
             drawbarrier1(obstacle, GRID_WIDTH)  # Use drawbarrier1 for obstacles
         elif obstacle_type == "barrier2":
             drawbarrier2(obstacle, GRID_WIDTH)  # Use drawbarrier2 for obstacles
-        elif obstacle_type == "train":
-            drawTrainObstacle(obstacle)  # Use drawTrainObstacle for train obstacles
-
+        
 def resetGame():
     """
     Resets the game state after a game over.
@@ -398,7 +418,7 @@ def showScreen():
     glEnd()
 
     # Display game info text
-    draw_text(10, 770, f"Score: {score}")
+    draw_text(10, 770, f"Score: {int(score)}")
     if game_over:
         draw_text(200, 450, "GAME OVER! Press R to Restart")
 

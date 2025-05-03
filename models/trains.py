@@ -15,7 +15,16 @@ def drawTrain(train_pos, num_cars=3):
     glScalef(1.5, 1.5, 1.5)  # Scale the entire train for better visibility
     glRotatef(90, 0, 0, 1)  # Rotate 90 degrees on the Z-axis
 
-    # Draw locomotive
+    # Draw train cars (blue compartments) first
+    for i in range(num_cars):
+        glPushMatrix()
+        glColor3f(0.1, 0.1, 0.8)  # Blue color for the cars
+        glTranslatef(-200 * (i + 1), 0, 0)  # Position each car behind the locomotive
+        glScalef(2, 1, 1)  # Scale to make it rectangular
+        glutSolidCube(100)  # Train car body
+        glPopMatrix()
+
+    # Draw locomotive (red compartment) after the blue compartments
     glPushMatrix()
     glColor3f(0.8, 0.1, 0.1)  # Red color for the locomotive
     glScalef(2, 1, 1)  # Scale to make it rectangular
@@ -28,15 +37,6 @@ def drawTrain(train_pos, num_cars=3):
     glTranslatef(50, 0, 60)  # Position on top of the locomotive
     gluCylinder(gluNewQuadric(), 10, 10, 40, 10, 10)  # Chimney
     glPopMatrix()
-
-    # Draw train cars
-    for i in range(num_cars):
-        glPushMatrix()
-        glColor3f(0.1, 0.1, 0.8)  # Blue color for the cars
-        glTranslatef(-150 * (i + 1), 0, 0)  # Position each car behind the locomotive
-        glScalef(2, 1, 1)  # Scale to make it rectangular
-        glutSolidCube(100)  # Train car body
-        glPopMatrix()
 
     glPopMatrix()
 
