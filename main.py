@@ -7,8 +7,7 @@ from models.barrier import drawbarrier2  # Import all models from barrier.py
 from models.text import draw_text  # Import all models from text.py
 from math import cos, sin, radians  # Import math functions for angle calculations
 import time
-
-
+import random  # Import random module for obstacle generation
 
 # Camera-related variables
 camera_pos = (0, 350, 250)
@@ -39,22 +38,82 @@ move_target_x = None  # Target X position for the movement
 # Sliding related variables
 is_sliding = False  # Flag to track if the player is sliding
 slide_start_time = None  # Start time of the slide
-slide_duration = 0.5  # Duration of the slide in seconds
+slide_duration = 0.7  # Duration of the slide in seconds
 slide_rotation_angle = 0  # Current rotation angle during the slide
 max_slide_rotation = 90  # Maximum rotation angle during the slide
 sliding_speed = 5 # Speed of the slide rotation
+
+# Game-related variables
+obstacles = []  # List to store active obstacles
+obstacle_speed = 300  # Speed at which obstacles move backward
+obstacle_spawn_interval = 1  # Time interval (in seconds) to spawn new obstacles
+last_obstacle_spawn_time = time.time()  # Time when the last obstacle was spawned
+score = 0  # Player's score
+game_over = False  # Flag to track if the game is over
 
 def draw_shapes():
 
     global GRID_WIDTH, player_pos, is_sliding, slide_rotation_angle   
 
-    drawbarrier1((0, -200, 0), GRID_WIDTH, lane_index=1)  # Draw the barrier at the player's position
+    # drawbarrier1((0, -200, 0), GRID_WIDTH)  # Draw the barrier at the player's position
 
-    #drawbarrier2((0, -200, 0), GRID_WIDTH, lane_index=1)  # Right lane
+    # drawbarrier2((0, -200, 0), GRID_WIDTH)  # Right lane
+    
     drawPlayer(player_pos, is_sliding, slide_rotation_angle)
 
-    
+def spawnObstacle():
+    """
+    Spawns a new obstacle at a random lane and randomly selects its type.
+    """
+    global obstacles
+    lane_index = random.choice([-1, 0, 1])  # Randomly choose a lane (-1, 0, 1)
+    obstacle_type = random.choice(["barrier1", "barrier2"])  # Randomly choose obstacle type
+    obstacle_pos = (lane_index * GRID_WIDTH / 1.5, -GRID_LENGTH, 0)  # Position at the far end (front)
+    obstacles.append((obstacle_pos, obstacle_type))  # Add the obstacle with its type to the list
 
+def updateObstacles():
+    """
+    Updates the positions of obstacles and removes those that go off-screen.
+    """
+    global obstacles, score, game_over
+
+    new_obstacles = []
+    for obstacle, obstacle_type in obstacles:
+        x, y, z = obstacle
+        y += obstacle_speed * delta_time  # Move the obstacle toward the player
+        if y < GRID_LENGTH:  # Keep obstacles within the screen
+            new_obstacles.append(((x, y, z), obstacle_type))
+        else:
+            score += 1  # Increment score for dodging the obstacle
+
+    obstacles = new_obstacles
+
+    # Check for collisions
+    for obstacle, _ in obstacles:
+        if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 50:
+            game_over = True
+            print(f"[DEBUG] Collision detected! Game Over. Final Score: {score}")
+
+def drawObstacles():
+    """
+    Draws all active obstacles on the screen.
+    """
+    for obstacle, obstacle_type in obstacles:
+        if obstacle_type == "barrier1":
+            drawbarrier1(obstacle, GRID_WIDTH)  # Use drawbarrier1 for obstacles
+        elif obstacle_type == "barrier2":
+            drawbarrier2(obstacle, GRID_WIDTH)  # Use drawbarrier2 for obstacles
+
+def resetGame():
+    """
+    Resets the game state after a game over.
+    """
+    global player_pos, obstacles, score, game_over
+    player_pos = (0, 0, 0)  # Reset player position
+    obstacles = []  # Clear all obstacles
+    score = 0  # Reset score
+    game_over = False  # Reset game over flag
+    print("[DEBUG] Game reset.")
 
 def updateDeltaTime():
     """
@@ -69,7 +128,11 @@ def keyboardListener(key, x, y):
     """
     Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
     """
-    global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time, slide_rotation_angle, is_forced_landing
+    global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time, slide_rotation_angle, is_forced_landing, game_over
+
+    if game_over and key == b'r':
+        resetGame()  # Restart the game
+        return
 
     print(f"[DEBUG] Key pressed: {key}")  # Debug
 
@@ -237,7 +300,6 @@ def mouseListener(button, state, x, y):
         # # Left mouse button fires a bullet
         # if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
 
-
 def setupCamera():
     """
     Configures the camera's projection and view settings.
@@ -258,26 +320,37 @@ def setupCamera():
               look_at_x, look_at_y, look_at_z,  # Look-at target
               0, 0, 1)  # Up vector (z-axis)
     
-
 def idle():
     """
     Idle function that runs continuously:
     - Updates delta time for smooth movement.
     - Updates player position for smooth lane transitions, jumps, and slides.
+    - Spawns and updates obstacles.
     - Triggers screen redraw for real-time updates.
     """
+    global last_obstacle_spawn_time
+
+    if game_over:
+        return  # Stop updating if the game is over
+
     updateDeltaTime()  # Update delta time
     updatePlayerMovement()  # Update the player's left/right movement
     updatePlayerJump()  # Update the player's jump
     updatePlayerSlide()  # Update the player's slide
-    glutPostRedisplay()  # Ensure the screen updates with the latest changes
+    updateObstacles()  # Update obstacle positions
 
+    # Spawn new obstacles at regular intervals
+    if time.time() - last_obstacle_spawn_time > obstacle_spawn_interval:
+        spawnObstacle()
+        last_obstacle_spawn_time = time.time()
+
+    glutPostRedisplay()  # Ensure the screen updates with the latest changes
 
 def showScreen():
     """
     Display function to render the game scene:
     - Clears the screen and sets up the camera.
-    - Draws everything of the screen
+    - Draws everything on the screen.
     """
     # Clear color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -286,15 +359,8 @@ def showScreen():
 
     setupCamera()  # Configure camera perspective
 
-    # Draw a random points
-    # glPointSize(20)
-    # glBegin(GL_POINTS)
-    # glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
-    # glEnd()
-
     # Draw the road with 3 lanes
     glBegin(GL_QUADS)
-    
     # Road base (dark gray)
     glColor3f(0.2, 0.2, 0.2)
     glVertex3f(-GRID_WIDTH, GRID_LENGTH, 0)
@@ -315,15 +381,16 @@ def showScreen():
 
     glEnd()
 
-    # Display game info text at a fixed screen position
-    draw_text(10, 770, f"A Random Fixed Position Text")
-    draw_text(10, 740, f"See how the position and variable change?: ")
-    
-    draw_shapes()
+    # Display game info text
+    draw_text(10, 770, f"Score: {score}")
+    if game_over:
+        draw_text(200, 450, "GAME OVER! Press R to Restart")
+
+    draw_shapes()  # Draw player and static objects
+    drawObstacles()  # Draw dynamic obstacles
 
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
-
 
 # Main function to set up OpenGL window and loop
 def main():

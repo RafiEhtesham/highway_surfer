@@ -3,17 +3,11 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
 
-def drawbarrier1(barrier_pos, g_width, lane_index=0):
+def drawbarrier1(barrier_pos, g_width):
 
     x, y, z = barrier_pos
 
     # Adjust the x position based on the lane index
-    if lane_index == -1:
-        x += 400
-    elif lane_index == 1:
-        x -= 400
-    elif lane_index == 0:
-        x = 0
 
     glPushMatrix()  # Save the current matrix state
     glTranslatef(x, y, z)  # Move to the adjusted position
@@ -72,19 +66,11 @@ def drawbarrier1(barrier_pos, g_width, lane_index=0):
 
 
 
-def drawbarrier2(barrier_pos, g_width, lane_index=0):
+def drawbarrier2(barrier_pos, g_width):
     """
     Draws a barrier at the same level as the player's ground level.
     """
     x, y, z = barrier_pos
-
-    # Adjust the x position based on the lane index
-    if lane_index == -1:
-        x += 400
-    elif lane_index == 1:
-        x -= 400
-    elif lane_index == 0:
-        x = 0
 
     # Set the barrier's z position to the player's ground level
     z = 0
