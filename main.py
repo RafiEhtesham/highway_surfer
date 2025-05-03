@@ -89,10 +89,16 @@ def updateObstacles():
     obstacles = new_obstacles
 
     # Check for collisions
-    for obstacle, _ in obstacles:
+    for obstacle, obstacle_type in obstacles:
         if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 50:
-            game_over = True
-            print(f"[DEBUG] Collision detected! Game Over. Final Score: {score}")
+            if obstacle_type == "barrier1" and not is_sliding:
+                # Collision with barrier1 if not sliding
+                game_over = True
+                print(f"[DEBUG] Collision with barrier1! Game Over. Final Score: {score}")
+            elif obstacle_type == "barrier2" and not is_jumping:
+                # Collision with barrier2 if not jumping
+                game_over = True
+                print(f"[DEBUG] Collision with barrier2! Game Over. Final Score: {score}")
 
 def drawObstacles():
     """
