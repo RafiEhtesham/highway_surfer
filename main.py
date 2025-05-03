@@ -5,6 +5,7 @@ from models.player import drawPlayer   # Import all models from models.py
 from models.barrier import drawbarrier1  # Import all models from barrier.py
 from models.barrier import drawbarrier2  # Import all models from barrier.py
 from models.text import draw_text  # Import all models from text.py
+from models.trains import drawTrainObstacle  # Import train obstacle drawing function
 from math import cos, sin, radians  # Import math functions for angle calculations
 import time
 import random  # Import random module for obstacle generation
@@ -45,7 +46,7 @@ sliding_speed = 5 # Speed of the slide rotation
 
 # Game-related variables
 obstacles = []  # List to store active obstacles
-obstacle_speed = 300  # Speed at which obstacles move backward
+obstacle_speed = 200  # Unified speed for all obstacles
 obstacle_spawn_interval = 1  # Time interval (in seconds) to spawn new obstacles
 last_obstacle_spawn_time = time.time()  # Time when the last obstacle was spawned
 score = 0  # Player's score
@@ -67,7 +68,7 @@ def spawnObstacle():
     """
     global obstacles
     lane_index = random.choice([-1, 0, 1])  # Randomly choose a lane (-1, 0, 1)
-    obstacle_type = random.choice(["barrier1", "barrier2"])  # Randomly choose obstacle type
+    obstacle_type = random.choice(["barrier1", "barrier2", "train"])  # Add train as an obstacle type
     obstacle_pos = (lane_index * GRID_WIDTH / 1.5, -GRID_LENGTH, 0)  # Position at the far end (front)
     obstacles.append((obstacle_pos, obstacle_type))  # Add the obstacle with its type to the list
 
@@ -80,7 +81,10 @@ def updateObstacles():
     new_obstacles = []
     for obstacle, obstacle_type in obstacles:
         x, y, z = obstacle
-        y += obstacle_speed * delta_time  # Move the obstacle toward the player
+        speed = obstacle_speed
+        if obstacle_type == "train":
+            speed *= 2  # Increase train speed by 20% for better perception
+        y += speed * delta_time  # Move the obstacle toward the player
         if y < GRID_LENGTH:  # Keep obstacles within the screen
             new_obstacles.append(((x, y, z), obstacle_type))
         else:
@@ -99,6 +103,10 @@ def updateObstacles():
                 # Collision with barrier2 if not jumping
                 game_over = True
                 print(f"[DEBUG] Collision with barrier2! Game Over. Final Score: {score}")
+            elif obstacle_type == "train":
+                # Collision with train (always fatal)
+                game_over = True
+                print(f"[DEBUG] Collision with train! Game Over. Final Score: {score}")
 
 def drawObstacles():
     """
@@ -109,6 +117,8 @@ def drawObstacles():
             drawbarrier1(obstacle, GRID_WIDTH)  # Use drawbarrier1 for obstacles
         elif obstacle_type == "barrier2":
             drawbarrier2(obstacle, GRID_WIDTH)  # Use drawbarrier2 for obstacles
+        elif obstacle_type == "train":
+            drawTrainObstacle(obstacle)  # Use drawTrainObstacle for train obstacles
 
 def resetGame():
     """
