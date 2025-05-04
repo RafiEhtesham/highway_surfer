@@ -1,87 +1,85 @@
 from OpenGL.GL import *
-from OpenGL.GLUT import *  # Import all GLUT functions
+from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from models.player import drawPlayer   # Import all models from models.py
-from models.barrier import drawbarrier1  # Import all models from barrier.py
-from models.barrier import drawbarrier2  # Import all models from barrier.py
-from models.text import draw_text  # Import all models from text.py
-from models.trains import drawTrainObstacle  # Import train obstacle drawing function
-from math import cos, sin, radians  # Import math functions for angle calculations
-from models.ui import draw_ui  # Import all models from ui.py
+from models.player import drawPlayer
+from models.barrier import drawbarrier1, drawbarrier2
+from models.text import draw_text
+from models.trains import drawTrainObstacle
+from math import cos, sin, radians
+from models.ui import draw_ui
 import time
-import random  # Import random module for obstacle generation
-
+import random
 
 game_started = False
 show_start_menu = True
 
 # Camera-related variables
 camera_pos = (0, 350, 250)
-look_at = (0, 0, 0)  # Target point for the camera to look at
+look_at = (0, 0, 0)
 
-player_pos = (0, 0, 0)  # Player position
+player_pos = (0, 0, 0)
 
-fovY = 90  # Field of view
-GRID_LENGTH = 1800  # Length of the grid (longer)
-GRID_WIDTH = 600  # Width of the grid (shorter)
+fovY = 90
+GRID_LENGTH = 1800
+GRID_WIDTH = 600
 
-last_time = time.time()  # Initialize last_time for delta time calculation
-delta_time = 0  # Time difference between frames
+last_time = time.time()
+delta_time = 0
 
 # Jumping related variables
-is_jumping = False  # Flag to track if the player is jumping
-jump_start_time = None  # Start time of the jump
-jump_duration = 0.7  # Duration of the jump in seconds
-jump_height = 200  # Maximum height of the jump
-is_forced_landing = False  # Flag to track if the player is forced to land
+is_jumping = False
+jump_start_time = None
+jump_duration = 0.7
+jump_height = 200
+is_forced_landing = False
 
 # Moving related variables
-is_moving = False  # Flag to track if the player is moving left or right
-move_start_time = None  # Start time of the movement
-move_duration = 0.2  # Duration of the left/right movement in seconds
-move_target_x = None  # Target X position for the movement
+is_moving = False
+move_start_time = None
+move_duration = 0.2
+move_target_x = None
 
 # Add a global flag to track whether the game is paused
 is_paused = False
 # Sliding related variables
-is_sliding = False  # Flag to track if the player is sliding
-slide_start_time = None  # Start time of the slide
-slide_duration = 0.7  # Duration of the slide in seconds
-slide_rotation_angle = 0  # Current rotation angle during the slide
-max_slide_rotation = 90  # Maximum rotation angle during the slide
-sliding_speed = 5 # Speed of the slide rotation
+is_sliding = False
+slide_start_time = None
+slide_duration = 0.7
+slide_rotation_angle = 0
+max_slide_rotation = 90
+sliding_speed = 5
 
 # Game-related variables
 
-obstacles = []  # List to store active obstacles
-obstacle_speed = 400  # Unified speed for all obstacles
-obstacle_spawn_interval = 1  # Time interval (in seconds) to spawn new obstacles
-last_obstacle_spawn_time = time.time()  # Time when the last obstacle was spawned
-score = 0  # Player's score
-high_score = 0  # Variable to store the high score
-game_over = False  # Flag to track if the game is over
-game_speed = 1.0  # Multiplier for obstacle speed, starts at 1.0
+obstacles = []
+obstacle_speed = 400
+obstacle_spawn_interval = 1
+last_obstacle_spawn_time = time.time()
+score = 0
+high_score = 0
+game_over = False
+game_speed = 1.0
 
 # First-person mode variables
-is_first_person = False  # Flag to track if first-person mode is active
-default_camera_pos = camera_pos  # Store the default camera position
-default_look_at = look_at  # Store the default look-at target
+is_first_person = False
+default_camera_pos = camera_pos
+default_look_at = look_at
+
+rail_tracks = []
+
+# Add a global variable to control rail track speed
+rail_speed_multiplier = 2
 
 def draw_shapes():
 
     global GRID_WIDTH, player_pos, is_sliding, slide_rotation_angle   
 
-    # drawbarrier1((0, -200, 0), GRID_WIDTH)  # Draw the barrier at the player's position
-
-    # drawbarrier2((0, -200, 0), GRID_WIDTH)  # Right lane
-    
     drawPlayer(player_pos, is_sliding, slide_rotation_angle)
 
 def drawStartMenu():
     """
     Draws the start menu screen with instructions.
     """
-    # Use orthographic projection for 2D rendering
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity()
@@ -90,7 +88,6 @@ def drawStartMenu():
     glPushMatrix()
     glLoadIdentity()
     
-    # Draw background (slightly darker than the road)
     glBegin(GL_QUADS)
     glColor3f(0.15, 0.15, 0.15)
     glVertex2f(0, 0)
@@ -116,10 +113,10 @@ def spawnObstacle():
     Spawns a new obstacle at a random lane and randomly selects its type.
     """
     global obstacles
-    lane_index = random.choice([-1, 0, 1])  # Randomly choose a lane (-1, 0, 1)
-    obstacle_type = random.choice(["barrier1", "barrier2", "train"])  # Add train as an obstacle type
-    obstacle_pos = (lane_index * GRID_WIDTH / 1.5, -GRID_LENGTH, 0)  # Position at the far end (front)
-    obstacles.append((obstacle_pos, obstacle_type))  # Add the obstacle with its type to the list
+    lane_index = random.choice([-1, 0, 1])
+    obstacle_type = random.choice(["barrier1", "barrier2", "train"])
+    obstacle_pos = (lane_index * GRID_WIDTH / 1.5, -GRID_LENGTH, 0)
+    obstacles.append((obstacle_pos, obstacle_type))
 
 def updateObstacles():
     """
@@ -127,13 +124,12 @@ def updateObstacles():
     """
     global obstacles, score, game_over, game_speed, obstacle_spawn_interval, is_paused
 
-    if is_paused:  # Stop updating obstacles if the game is paused
+    if is_paused:
         return
 
-    # Increase game speed and adjust spawn interval based on score
     if score > 100:
         game_speed = 1.5
-        obstacle_spawn_interval = 0.9  # Slightly faster spawn rate
+        obstacle_spawn_interval = 0.9
     if score > 300:
         game_speed = 2
         obstacle_spawn_interval = 0.8
@@ -146,35 +142,29 @@ def updateObstacles():
         x, y, z = obstacle
         speed = obstacle_speed
         if obstacle_type == "train":
-            speed *= 2.5  # Increase train speed
-        y += speed * delta_time * game_speed  # Apply game speed multiplier
-        # Check if the obstacle has crossed the player
+            speed *= 2.5
+        y += speed * delta_time * game_speed
         if y > player_pos[1] and y < GRID_LENGTH:
-            score += 0.005  # Increment score for dodging the obstacle
-            # print(f"[DEBUG] Obstacle crossed! Score: {score}")
+            score += 0.005
 
-        if y < GRID_LENGTH:  # Keep obstacles within the screen
+        if y < GRID_LENGTH:
             new_obstacles.append(((x, y, z), obstacle_type))
 
     obstacles = new_obstacles
 
-    # Check for collisions
     for obstacle, obstacle_type in obstacles:
         if obstacle_type == "barrier1" and not is_sliding:
             if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 50:
-                # Collision with barrier1 if not sliding
                 game_over = True
                 print(f"[DEBUG] Collision with barrier1! Game Over. Final Score: {score}") 
         
         elif obstacle_type == "barrier2" and not is_jumping:
             if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 50:
-                # Collision with barrier2 if not jumping
                 game_over = True
                 print(f"[DEBUG] Collision with barrier2! Game Over. Final Score: {score}")
 
         elif obstacle_type == "train":
             if abs(obstacle[0] - player_pos[0]) < GRID_WIDTH / 6 and abs(obstacle[1] - player_pos[1]) < 300:    
-                # Adjust collision bounds for the train
                 game_over = True
                 print(f"[DEBUG] Collision with train! Game Over. Final Score: {score}")
 
@@ -184,11 +174,11 @@ def drawObstacles():
     """
     for obstacle, obstacle_type in obstacles:
         if obstacle_type == "train":
-            drawTrainObstacle(obstacle)  # Use drawTrainObstacle for train obstacles
+            drawTrainObstacle(obstacle)
         elif obstacle_type == "barrier1":
-            drawbarrier1(obstacle, GRID_WIDTH)  # Use drawbarrier1 for obstacles
+            drawbarrier1(obstacle, GRID_WIDTH)
         elif obstacle_type == "barrier2":
-            drawbarrier2(obstacle, GRID_WIDTH)  # Use drawbarrier2 for obstacles
+            drawbarrier2(obstacle, GRID_WIDTH)
         
 def resetGame():
     """
@@ -196,13 +186,13 @@ def resetGame():
     """
     global player_pos, obstacles, score, game_over, high_score
     if score > high_score:
-        high_score = int(score)  # Update high score if the current score is higher
-        print(f"[DEBUG] New high score: {high_score}")  # Debug message
+        high_score = int(score)
+        print(f"[DEBUG] New high score: {high_score}")
 
-    player_pos = (0, 0, 0)  # Reset player position
-    obstacles = []  # Clear all obstacles
-    score = 0  # Reset score
-    game_over = False  # Reset game over flag
+    player_pos = (0, 0, 0)
+    obstacles = []
+    score = 0
+    game_over = False
     print("[DEBUG] Game reset.")
 
 def updateDeltaTime():
@@ -222,8 +212,7 @@ def keyboardListener(key, x, y):
     global slide_rotation_angle, is_forced_landing, game_over, is_first_person, camera_pos, look_at
     global game_started, show_start_menu
     
-    # Handle start menu
-    if show_start_menu and key == b' ':  # Space key
+    if show_start_menu and key == b' ':
         show_start_menu = False
         game_started = True
         print("[DEBUG] Game started from menu.")
@@ -232,26 +221,23 @@ def keyboardListener(key, x, y):
     if not game_started:
         return
 
-
     if game_over and key == b'r':
-        resetGame()  # Restart the game
+        resetGame()
         return
 
-    print(f"[DEBUG] Key pressed: {key}")  # Debug
+    print(f"[DEBUG] Key pressed: {key}")
 
-    # Toggle first-person mode (V key)
     if key == b'v':
         is_first_person = not is_first_person
         if is_first_person:
-            camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)  # Move camera to player's head
-            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])  # Look forward where obstacles are coming from
-            print(f"[DEBUG] First-person mode activated. camera_pos: {camera_pos}, look_at: {look_at}")  # Debug
+            camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
+            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])
+            print(f"[DEBUG] First-person mode activated. camera_pos: {camera_pos}, look_at: {look_at}")
         else:
-            camera_pos = default_camera_pos  # Revert to default camera position
-            look_at = default_look_at  # Revert to default look-at target
-            print(f"[DEBUG] First-person mode deactivated. camera_pos: {camera_pos}, look_at: {look_at}")  # Debug
+            camera_pos = default_camera_pos
+            look_at = default_look_at
+            print(f"[DEBUG] First-person mode deactivated. camera_pos: {camera_pos}, look_at: {look_at}")
 
-    # Move left (A key)
     if key == b'a' and not is_moving and not is_paused:
         x, y, z = player_pos
         target_x = x + 400
@@ -259,9 +245,8 @@ def keyboardListener(key, x, y):
             is_moving = True
             move_start_time = time.time()
             move_target_x = target_x
-            print(f"[DEBUG] Moving left. target_x: {target_x}, player_pos: {player_pos}")  # Debug
+            print(f"[DEBUG] Moving left. target_x: {target_x}, player_pos: {player_pos}")
 
-    # Move right (D key)
     if key == b'd' and not is_moving and not is_paused:
         x, y, z = player_pos
         target_x = x - 400
@@ -269,29 +254,25 @@ def keyboardListener(key, x, y):
             is_moving = True
             move_start_time = time.time()
             move_target_x = target_x
-            print(f"[DEBUG] Moving right. target_x: {target_x}, player_pos: {player_pos}")  # Debug
+            print(f"[DEBUG] Moving right. target_x: {target_x}, player_pos: {player_pos}")
 
-    # Jump (W key)
     if key == b'w' and not is_jumping:
         is_jumping = True
-        jump_start_time = time.time()  # Record the start time of the jump
-        print(f"[DEBUG] Jump initiated. jump_start_time: {jump_start_time}, player_pos: {player_pos}")  # Debug
+        jump_start_time = time.time()
+        print(f"[DEBUG] Jump initiated. jump_start_time: {jump_start_time}, player_pos: {player_pos}")
         if is_sliding:
-            # End the slide if jumping
             is_sliding = False
-            slide_rotation_angle = 0  # Reset rotation angle
-            print(f"[DEBUG] Slide ended due to jump.")  # Debug
+            slide_rotation_angle = 0
+            print(f"[DEBUG] Slide ended due to jump.")
 
-    # Slide (S key)
     if key == b's' and not is_sliding:
         if is_jumping:
-            # Trigger a smooth forced landing
             is_forced_landing = True
-            print(f"[DEBUG] Forced landing triggered.")  # Debug
+            print(f"[DEBUG] Forced landing triggered.")
         else:
             is_sliding = True
-            slide_start_time = time.time()  # Record the start time of the slide
-            print(f"[DEBUG] Slide initiated. slide_start_time: {slide_start_time}")  # Debug
+            slide_start_time = time.time()
+            print(f"[DEBUG] Slide initiated. slide_start_time: {slide_start_time}")
 
 def updatePlayerMovement():
     """
@@ -300,31 +281,27 @@ def updatePlayerMovement():
     global player_pos, is_moving, move_start_time, move_target_x, camera_pos, look_at
 
     if not is_moving:
-        return  # No movement in progress
+        return
 
     elapsed_time = time.time() - move_start_time
-    print(f"[DEBUG] Movement elapsed_time: {elapsed_time}, move_duration: {move_duration}")  # Debug
+    print(f"[DEBUG] Movement elapsed_time: {elapsed_time}, move_duration: {move_duration}")
     if elapsed_time >= move_duration:
-        # End the movement and snap to the target position
         x, y, z = player_pos
         player_pos = (move_target_x, y, z)
         is_moving = False
-        # Update camera position in first-person mode
         if is_first_person:
             camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
-            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])  # Adjust look_at to match player's lane
-        print(f"[DEBUG] Movement ended. player_pos: {player_pos}")  # Debug
+            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])
+        print(f"[DEBUG] Movement ended. player_pos: {player_pos}")
     else:
-        # Interpolate the X position based on elapsed time
-        t = elapsed_time / move_duration  # Normalized time (0 to 1)
+        t = elapsed_time / move_duration
         start_x, y, z = player_pos
         x = start_x + t * (move_target_x - start_x)
         player_pos = (x, y, z)
-        # Update camera position in first-person mode
         if is_first_person:
             camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
-            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])  # Adjust look_at dynamically
-        print(f"[DEBUG] Moving. player_pos: {player_pos}")  # Debug
+            look_at = (player_pos[0], -(player_pos[1] + 1000), player_pos[2])
+        print(f"[DEBUG] Moving. player_pos: {player_pos}")
 
 def updatePlayerJump():
     """
@@ -333,34 +310,30 @@ def updatePlayerJump():
     global player_pos, is_jumping, jump_start_time, is_forced_landing, camera_pos
 
     if not is_jumping:
-        return  # No jump in progress
+        return
 
     elapsed_time = time.time() - jump_start_time
-    print(f"[DEBUG] Jump elapsed_time: {elapsed_time}, jump_duration: {jump_duration}")  # Debug
+    print(f"[DEBUG] Jump elapsed_time: {elapsed_time}, jump_duration: {jump_duration}")
     if elapsed_time >= jump_duration or is_forced_landing:
-        # Smoothly return to the ground if forced landing is triggered
         x, y, z = player_pos
         descent_time = elapsed_time / jump_duration if is_forced_landing else 0
         player_pos = (x, y, z * (1 - descent_time))
-        print(f"[DEBUG] Jump landing. player_pos: {player_pos}, is_forced_landing: {is_forced_landing}")  # Debug
-        if z <= 10:  # Close enough to the ground
+        print(f"[DEBUG] Jump landing. player_pos: {player_pos}, is_forced_landing: {is_forced_landing}")
+        if z <= 10:
             player_pos = (x, y, 0)
             is_jumping = False
             is_forced_landing = False
-        # Update camera position in first-person mode
         if is_first_person:
             camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
-        print(f"[DEBUG] Jump ended. player_pos: {player_pos}")  # Debug
+        print(f"[DEBUG] Jump ended. player_pos: {player_pos}")
     else:
-        # Calculate the vertical position using a parabolic trajectory
-        t = elapsed_time / jump_duration  # Normalized time (0 to 1)
-        height = jump_height * (1 - (2 * t - 1) ** 2)  # Parabolic equation
+        t = elapsed_time / jump_duration
+        height = jump_height * (1 - (2 * t - 1) ** 2)
         x, y, z = player_pos
         player_pos = (x, y, height)
-        # Update camera position in first-person mode
         if is_first_person:
             camera_pos = (player_pos[0], player_pos[1] + 50, player_pos[2] + 200)
-        print(f"[DEBUG] Jumping. player_pos: {player_pos}")  # Debug
+        print(f"[DEBUG] Jumping. player_pos: {player_pos}")
 
 def updatePlayerSlide():
     """
@@ -369,31 +342,90 @@ def updatePlayerSlide():
     global is_sliding, slide_start_time, slide_rotation_angle, sliding_speed, camera_pos
 
     if not is_sliding:
-        return  # No slide in progress
+        return
 
     elapsed_time = time.time() - slide_start_time
-    print(f"[DEBUG] Slide elapsed_time: {elapsed_time}, slide_duration: {slide_duration}")  # Debug
+    print(f"[DEBUG] Slide elapsed_time: {elapsed_time}, slide_duration: {slide_duration}")
     if elapsed_time >= slide_duration:
-        # End the slide and reset the player's rotation
         is_sliding = False
-        slide_rotation_angle = 0  # Reset rotation angle
-        # Smoothly return the camera to its original position in first-person mode
+        slide_rotation_angle = 0
         if is_first_person:
-            target_camera_z = player_pos[2] + 200  # Original camera z position
+            target_camera_z = player_pos[2] + 200
             current_camera_x, current_camera_y, current_camera_z = camera_pos
             camera_pos = (current_camera_x, current_camera_y, current_camera_z + (target_camera_z - current_camera_z) * 0.1)
-        print(f"[DEBUG] Slide ended. slide_rotation_angle: {slide_rotation_angle}")  # Debug
+        print(f"[DEBUG] Slide ended. slide_rotation_angle: {slide_rotation_angle}")
     else:
-        # Gradually increase the rotation angle during the slide
-        t = elapsed_time / slide_duration  # Normalized time (0 to 1)
+        t = elapsed_time / slide_duration
         new_slide_rotation_angle = t * max_slide_rotation * sliding_speed
         slide_rotation_angle = min(new_slide_rotation_angle, max_slide_rotation)
-        # Smoothly shift the camera down in first-person mode
         if is_first_person:
-            target_camera_z = player_pos[2] + 180  # Shift camera z position down by 50 units
+            target_camera_z = player_pos[2] + 180
             current_camera_x, current_camera_y, current_camera_z = camera_pos
             camera_pos = (current_camera_x, current_camera_y, current_camera_z + (target_camera_z - current_camera_z) * 0.1)
-        print(f"[DEBUG] Sliding. slide_rotation_angle: {slide_rotation_angle}")  # Debug
+        print(f"[DEBUG] Sliding. slide_rotation_angle: {slide_rotation_angle}")
+
+def drawRailTrack(position):
+    """
+    Draws a rail track at the specified position.
+    """
+    x, y, z = position
+    glBegin(GL_QUADS)
+    glColor3f(0.5, 0.5, 0.5)
+    glVertex3f(x - GRID_WIDTH / 6, y + 10, z)
+    glVertex3f(x + GRID_WIDTH / 6, y + 10, z)
+    glVertex3f(x + GRID_WIDTH / 6, y - 10, z)
+    glVertex3f(x - GRID_WIDTH / 6, y - 10, z)
+    glEnd()
+
+    glBegin(GL_QUADS)
+    glColor3f(0.3, 0.3, 0.3)
+    glVertex3f(x - GRID_WIDTH / 12, y + 10, z + 1)
+    glVertex3f(x - GRID_WIDTH / 12 + 5, y + 10, z + 1)
+    glVertex3f(x - GRID_WIDTH / 12 + 5, y - 10, z + 1)
+    glVertex3f(x - GRID_WIDTH / 12, y - 10, z + 1)
+
+    glVertex3f(x + GRID_WIDTH / 12 - 5, y + 10, z + 1)
+    glVertex3f(x + GRID_WIDTH / 12, y + 10, z + 1)
+    glVertex3f(x + GRID_WIDTH / 12, y - 10, z + 1)
+    glVertex3f(x + GRID_WIDTH / 12 - 5, y - 10, z + 1)
+    glEnd()
+
+def updateRailTracks():
+    """
+    Updates the positions of the rail tracks and resets them when they go off-screen.
+    """
+    global rail_tracks
+
+    new_rail_tracks = []
+    for track in rail_tracks:
+        x, y, z = track
+        y += obstacle_speed * delta_time * game_speed * rail_speed_multiplier
+        if y < GRID_LENGTH:
+            new_rail_tracks.append((x, y, z))
+        else:
+            new_rail_tracks.append((x, -GRID_LENGTH, z))
+
+    rail_tracks = new_rail_tracks
+
+def initializeRailTracks():
+    """
+    Initializes the rail tracks for each lane with increased frequency.
+    """
+    global rail_tracks
+    rail_tracks = []
+    for i in range(-GRID_LENGTH, GRID_LENGTH, 200):
+        rail_tracks.extend([
+            (-GRID_WIDTH / 1.5, i, 0),
+            (0, i, 0),
+            (GRID_WIDTH / 1.5, i, 0)
+        ])
+
+def drawRailTracks():
+    """
+    Draws all rail tracks on the screen.
+    """
+    for track in rail_tracks:
+        drawRailTrack(track)
 
 def specialKeyListener(key, x, y):
     """
@@ -401,34 +433,30 @@ def specialKeyListener(key, x, y):
     """
     global camera_pos
 
-    print(f"[DEBUG] Special key pressed: {key}")  # Debug
+    print(f"[DEBUG] Special key pressed: {key}")
 
     x, y, z = camera_pos
-    # Move camera up (UP arrow key)
     if key == GLUT_KEY_UP:
-        z += 50  # Small angle decrement for smooth movement
-        print(f"[DEBUG] Camera moved up. camera_pos: {camera_pos}")  # Debug
+        z += 50
+        print(f"[DEBUG] Camera moved up. camera_pos: {camera_pos}")
 
-    # Move camera down (DOWN arrow key)
     if key == GLUT_KEY_DOWN:
-        z -= 50  # Small angle increment for smooth movement
-        print(f"[DEBUG] Camera moved down. camera_pos: {camera_pos}")  # Debug
+        z -= 50
+        print(f"[DEBUG] Camera moved down. camera_pos: {camera_pos}")
 
-    # Move camera left (LEFT arrow key)
     if key == GLUT_KEY_LEFT:
-        angle = -10  # Angle decrement for rotation to the left
-        new_x = x * cos(radians(angle)) - y * sin(radians(angle))
-        new_y = x * sin(radians(angle)) + y * cos(radians(angle))
-        x, y = new_x, new_y  # Update camera position
-        print(f"[DEBUG] Camera moved left. camera_pos: {camera_pos}")  # Debug
-
-    # Move camera right (RIGHT arrow key)
-    if key == GLUT_KEY_RIGHT:
-        angle = 10  # Angle increment for rotation
+        angle = -10
         new_x = x * cos(radians(angle)) - y * sin(radians(angle))
         new_y = x * sin(radians(angle)) + y * cos(radians(angle))
         x, y = new_x, new_y
-        print(f"[DEBUG] Camera moved right. camera_pos: {camera_pos}")  # Debug
+        print(f"[DEBUG] Camera moved left. camera_pos: {camera_pos}")
+
+    if key == GLUT_KEY_RIGHT:
+        angle = 10
+        new_x = x * cos(radians(angle)) - y * sin(radians(angle))
+        new_y = x * sin(radians(angle)) + y * cos(radians(angle))
+        x, y = new_x, new_y
+        print(f"[DEBUG] Camera moved right. camera_pos: {camera_pos}")
 
     camera_pos = (x, y, z)
 
@@ -439,45 +467,40 @@ def mouseListener(button, state, x, y):
     global is_paused, game_over, player_pos, obstacles, score, game_speed, obstacle_spawn_interval, is_first_person, camera_pos, look_at
 
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
-        # Convert mouse coordinates to normalized device coordinates
-        mouse_x = 1 - (x / 600) * 2  # Invert X coordinate for leftmost mapping
-        mouse_y = -((y / 900) * 2 - 1)  # Keep Y coordinate as is
+        mouse_x = 1 - (x / 600) * 2
+        mouse_y = -((y / 900) * 2 - 1)
 
-        # Check if the click is within the restart button area
-        restart_center_x = -0.9  # Center of the restart button (left side after inversion)
-        restart_center_y = 0.95  # Vertically aligned with the white bar
-        restart_width = 0.1  # Width of the restart button
-        restart_height = 0.1  # Height of the restart button
+        restart_center_x = -0.9
+        restart_center_y = 0.95
+        restart_width = 0.1
+        restart_height = 0.1
 
         if (restart_center_x - restart_width / 2 <= mouse_x <= restart_center_x + restart_width / 2 and
                 restart_center_y - restart_height / 2 <= mouse_y <= restart_center_y + restart_height / 2):
-            # Reset the game state
-            player_pos = (0, 0, 0)  # Reset player position
-            obstacles = []  # Clear all obstacles
-            score = 0  # Reset score
-            game_speed = 1.0  # Reset game speed
-            obstacle_spawn_interval = 1  # Reset obstacle spawn interval
-            game_over = False  # Reset game over flag
-            is_paused = False  # Unpause the game
+            player_pos = (0, 0, 0)
+            obstacles = []
+            score = 0
+            game_speed = 1.0
+            obstacle_spawn_interval = 1
+            game_over = False
+            is_paused = False
 
-            # Switch back to third-person mode if in first-person mode
             if is_first_person:
                 is_first_person = False
-                camera_pos = default_camera_pos  # Revert to default camera position
-                look_at = default_look_at  # Revert to default look-at target
+                camera_pos = default_camera_pos
+                look_at = default_look_at
                 print("[DEBUG] Switched back to third-person mode.")
 
             print("[DEBUG] Game restarted via restart button.")
 
-        # Check if the click is within the pause/play button area
-        center_x = 0  # Center of the pause/play button
-        center_y = 0.95  # Vertically aligned with the white bar
-        button_width = 0.06  # Width of the button (matches play button width)
-        button_height = 0.07  # Height of the button (matches play button height)
+        center_x = 0
+        center_y = 0.95
+        button_width = 0.06
+        button_height = 0.07
 
         if (center_x - button_width / 2 <= mouse_x <= center_x + button_width / 2 and
                 center_y - button_height / 2 <= mouse_y <= center_y + button_height / 2):
-            is_paused = not is_paused  # Toggle the pause state
+            is_paused = not is_paused
             print(f"Pause state toggled: {'Paused' if is_paused else 'Playing'}")
 
 def setupCamera():
@@ -485,20 +508,17 @@ def setupCamera():
     Configures the camera's projection and view settings.
     Uses a perspective projection and positions the camera to look at the target.
     """
-    glMatrixMode(GL_PROJECTION)  # Switch to projection matrix mode
-    glLoadIdentity()  # Reset the projection matrix
-    # Set up a perspective projection (field of view, aspect ratio, near clip, far clip)
-    gluPerspective(fovY, 1.5, 0.1, 1500) # Think why aspect ration is 1.25?
-    glMatrixMode(GL_MODELVIEW)  # Switch to model-view matrix mode
-    glLoadIdentity()  # Reset the model-view matrix
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(fovY, 1.5, 0.1, 1500)
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
 
-    # Extract camera position and look-at target
     x, y, z = camera_pos
     look_at_x, look_at_y, look_at_z = look_at
-    # Position the camera and set its orientation
-    gluLookAt(x, y, z,  # Camera position
-              look_at_x, look_at_y, look_at_z,  # Look-at target
-              0, 0, 1)  # Up vector (z-axis)
+    gluLookAt(x, y, z,
+              look_at_x, look_at_y, look_at_z,
+              0, 0, 1)
     
 def idle():
     """
@@ -514,23 +534,23 @@ def idle():
         glutPostRedisplay()
         return
 
-    updateDeltaTime()  # Update delta time
+    updateDeltaTime()
 
-    if game_over or is_paused:  # Stop updates if the game is over or paused
+    if game_over or is_paused:
         return
 
     
-    updatePlayerMovement()  # Update the player's left/right movement
-    updatePlayerJump()  # Update the player's jump
-    updatePlayerSlide()  # Update the player's slide
-    updateObstacles()  # Update obstacle positions
+    updatePlayerMovement()
+    updatePlayerJump()
+    updatePlayerSlide()
+    updateObstacles()
+    updateRailTracks()
 
-    # Spawn new obstacles at regular intervals
     if time.time() - last_obstacle_spawn_time > obstacle_spawn_interval:
         spawnObstacle()
         last_obstacle_spawn_time = time.time()
 
-    glutPostRedisplay()  # Ensure the screen updates with the latest changes
+    glutPostRedisplay()
 
 def showScreen():
     
@@ -541,97 +561,83 @@ def showScreen():
     """
     global show_start_menu, game_over, score, high_score
     
-    # Clear color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()  # Reset modelview matrix
-    glViewport(0, 0, 600, 900)  # Set viewport size
+    glLoadIdentity()
+    glViewport(0, 0, 600, 900)
 
     if show_start_menu:
         drawStartMenu()
         glutSwapBuffers()
         return
 
-    setupCamera()  # Configure camera perspective
+    setupCamera()
 
-    # Draw the road with 3 lanes
     glBegin(GL_QUADS)
-    # Road base (dark gray)
     glColor3f(0.2, 0.2, 0.2)
     glVertex3f(-GRID_WIDTH, GRID_LENGTH, 0)
     glVertex3f(GRID_WIDTH, GRID_LENGTH, 0)
     glVertex3f(GRID_WIDTH, -GRID_LENGTH, 0)
     glVertex3f(-GRID_WIDTH, -GRID_LENGTH, 0)
 
-    # Lane dividers (white lines)
     glColor3f(1, 1, 1)
-    lane_width = GRID_WIDTH / 3  # Divide the road into 3 lanes
-    for i in range(-1, 2):  # Draw 2 lane dividers
-        if i != 0:  # Skip the center lane    
+    lane_width = GRID_WIDTH / 3
+    for i in range(-1, 2):
+        if i != 0:
             x = i * lane_width
-            glVertex3f(x - 1, GRID_LENGTH, 0.1)  # Slightly above the road surface
+            glVertex3f(x - 1, GRID_LENGTH, 0.1)
             glVertex3f(x + 1, GRID_LENGTH, 0.1)
             glVertex3f(x + 1, -GRID_LENGTH, 0.1)
             glVertex3f(x - 1, -GRID_LENGTH, 0.1)
 
     glEnd()
 
-    # Display game info text
-    
     if game_over:
         if score > high_score:
-            high_score = int(score)  # Update high score if the current score is higher
+            high_score = int(score)
         draw_text(180, 700, f"GAME OVER! Your Score: {int(score)}. Press R to Restart")
-        draw_text(180, 650, f"High Score: {high_score}")  # Display high score
+        draw_text(180, 650, f"High Score: {high_score}")
     else:
         draw_text(10, 770, f"Score: {int(score)}")
-        draw_text(10, 700, f"High Score: {high_score}")  # Display high score during gameplay
+        draw_text(10, 700, f"High Score: {high_score}")
 
-    # Display game info text at a fixed screen position
-    #draw_text(10, 770, f"A Random Fixed Position Text")
-    #draw_text(10, 740, f"See how the position and variable change?: ")
-
-    # Switch to orthographic projection for UI rendering
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity()
-    glOrtho(-1, 1, -1, 1, -1, 1)  # Ensure this matches the coordinate system in draw_restart_arrow
+    glOrtho(-1, 1, -1, 1, -1, 1)
     glMatrixMode(GL_MODELVIEW)
     glPushMatrix()
     glLoadIdentity()
 
-    # Call the draw_ui function to render the white bar at the top
-    draw_ui(is_paused)  # Pass the pause/play state to draw_ui
+    draw_ui(is_paused)
 
-    # Display game info text (player score) under the white UI bar
-    draw_text(10, 730, f"Score: {int(score)}")  # Adjusted position to ensure visibility
+    draw_text(10, 730, f"Score: {int(score)}")
 
-    # Restore the previous projection and modelview matrices
     glPopMatrix()
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
     
-    drawObstacles()  # Draw dynamic obstacles
-    draw_shapes()  # Draw player and static objects
+    drawRailTracks()
+    drawObstacles()
+    draw_shapes()
     
-    # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
 
-# Main function to set up OpenGL window and loop
 def main():
+    initializeRailTracks()
     glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # Double buffering, RGB color, depth test
-    glutInitWindowSize(600, 900)  # Window size
-    glutInitWindowPosition(100, 20)  # Window position
-    wind = glutCreateWindow(b"3D OpenGL Intro")  # Create the window
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+    glutInitWindowSize(600, 900)
+    glutInitWindowPosition(100, 20)
+    wind = glutCreateWindow(b"3D OpenGL Intro")
 
-    glutDisplayFunc(showScreen)  # Register display function
-    glutKeyboardFunc(keyboardListener)  # Register keyboard listener
+    glutDisplayFunc(showScreen)
+    glutKeyboardFunc(keyboardListener)
     glutSpecialFunc(specialKeyListener)
     glutMouseFunc(mouseListener)
-    glutIdleFunc(idle)  # Register the idle function to move the bullet automatically
+    glutIdleFunc(idle)
 
-    glutMainLoop()  # Enter the GLUT main loop
+    glutMainLoop()
 
 if __name__ == "__main__":
     main()
