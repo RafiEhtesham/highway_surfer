@@ -58,6 +58,7 @@ obstacle_speed = 400  # Unified speed for all obstacles
 obstacle_spawn_interval = 1  # Time interval (in seconds) to spawn new obstacles
 last_obstacle_spawn_time = time.time()  # Time when the last obstacle was spawned
 score = 0  # Player's score
+high_score = 0  # Variable to store the high score
 game_over = False  # Flag to track if the game is over
 game_speed = 1.0  # Multiplier for obstacle speed, starts at 1.0
 
@@ -193,7 +194,11 @@ def resetGame():
     """
     Resets the game state after a game over.
     """
-    global player_pos, obstacles, score, game_over
+    global player_pos, obstacles, score, game_over, high_score
+    if score > high_score:
+        high_score = int(score)  # Update high score if the current score is higher
+        print(f"[DEBUG] New high score: {high_score}")  # Debug message
+
     player_pos = (0, 0, 0)  # Reset player position
     obstacles = []  # Clear all obstacles
     score = 0  # Reset score
@@ -505,7 +510,7 @@ def idle():
     """
     global last_obstacle_spawn_time
 
-    if show_start_menu or game_over or is_paused:
+    if show_start_menu:
         glutPostRedisplay()
         return
 
@@ -534,7 +539,7 @@ def showScreen():
     - Clears the screen and sets up the camera.
     - Draws everything on the screen.
     """
-
+    global show_start_menu, game_over, score, high_score
     
     # Clear color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -571,9 +576,15 @@ def showScreen():
     glEnd()
 
     # Display game info text
-    draw_text(10, 770, f"Score: {int(score)}")
+    
     if game_over:
-        draw_text(200, 450, "GAME OVER! Press R to Restart")
+        if score > high_score:
+            high_score = int(score)  # Update high score if the current score is higher
+        draw_text(180, 700, f"GAME OVER! Your Score: {int(score)}. Press R to Restart")
+        draw_text(180, 650, f"High Score: {high_score}")  # Display high score
+    else:
+        draw_text(10, 770, f"Score: {int(score)}")
+        draw_text(10, 700, f"High Score: {high_score}")  # Display high score during gameplay
 
     # Display game info text at a fixed screen position
     #draw_text(10, 770, f"A Random Fixed Position Text")
