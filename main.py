@@ -11,6 +11,10 @@ from models.ui import draw_ui  # Import all models from ui.py
 import time
 import random  # Import random module for obstacle generation
 
+
+game_started = False
+show_start_menu = True
+
 # Camera-related variables
 camera_pos = (0, 350, 250)
 look_at = (0, 0, 0)  # Target point for the camera to look at
@@ -71,6 +75,40 @@ def draw_shapes():
     # drawbarrier2((0, -200, 0), GRID_WIDTH)  # Right lane
     
     drawPlayer(player_pos, is_sliding, slide_rotation_angle)
+
+def drawStartMenu():
+    """
+    Draws the start menu screen with instructions.
+    """
+    # Use orthographic projection for 2D rendering
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    glOrtho(0, 600, 0, 900, -1, 1)
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    # Draw background (slightly darker than the road)
+    glBegin(GL_QUADS)
+    glColor3f(0.15, 0.15, 0.15)
+    glVertex2f(0, 0)
+    glVertex2f(600, 0)
+    glVertex2f(600, 900)
+    glVertex2f(0, 900)
+    glEnd()
+    
+    
+    draw_text(370, 600, "HIGHWAY SURFER")
+    draw_text(360, 550, "Press SPACE to start")
+    draw_text(300, 400, "Use A/D keys to move left/right")
+    draw_text(387, 350, "Press W to jump")
+    draw_text(387, 300, "Press S to slide")
+
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
 
 def spawnObstacle():
     """
@@ -175,7 +213,20 @@ def keyboardListener(key, x, y):
     """
     Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
     """
-    global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time, slide_rotation_angle, is_forced_landing, game_over, is_first_person, camera_pos, look_at
+    global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time
+    global slide_rotation_angle, is_forced_landing, game_over, is_first_person, camera_pos, look_at
+    global game_started, show_start_menu
+    
+    # Handle start menu
+    if show_start_menu and key == b' ':  # Space key
+        show_start_menu = False
+        game_started = True
+        print("[DEBUG] Game started from menu.")
+        return
+        
+    if not game_started:
+        return
+
 
     if game_over and key == b'r':
         resetGame()  # Restart the game
@@ -454,6 +505,10 @@ def idle():
     """
     global last_obstacle_spawn_time
 
+    if show_start_menu or game_over or is_paused:
+        glutPostRedisplay()
+        return
+
     updateDeltaTime()  # Update delta time
 
     if game_over or is_paused:  # Stop updates if the game is over or paused
@@ -473,15 +528,23 @@ def idle():
     glutPostRedisplay()  # Ensure the screen updates with the latest changes
 
 def showScreen():
+    
     """
     Display function to render the game scene:
     - Clears the screen and sets up the camera.
     - Draws everything on the screen.
     """
+
+    
     # Clear color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()  # Reset modelview matrix
     glViewport(0, 0, 600, 900)  # Set viewport size
+
+    if show_start_menu:
+        drawStartMenu()
+        glutSwapBuffers()
+        return
 
     setupCamera()  # Configure camera perspective
 
