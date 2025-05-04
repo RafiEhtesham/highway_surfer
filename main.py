@@ -107,7 +107,7 @@ def updateObstacles():
         x, y, z = obstacle
         speed = obstacle_speed
         if obstacle_type == "train":
-            speed *= 2  # Increase train speed
+            speed *= 2.5  # Increase train speed
         y += speed * delta_time * game_speed  # Apply game speed multiplier
         # Check if the obstacle has crossed the player
         if y > player_pos[1] and y < GRID_LENGTH:
@@ -196,7 +196,7 @@ def keyboardListener(key, x, y):
             print(f"[DEBUG] First-person mode deactivated. camera_pos: {camera_pos}, look_at: {look_at}")  # Debug
 
     # Move left (A key)
-    if key == b'a' and not is_moving:
+    if key == b'a' and not is_moving and not is_paused:
         x, y, z = player_pos
         target_x = x + 400
         if abs(target_x) < GRID_WIDTH:
@@ -206,7 +206,7 @@ def keyboardListener(key, x, y):
             print(f"[DEBUG] Moving left. target_x: {target_x}, player_pos: {player_pos}")  # Debug
 
     # Move right (D key)
-    if key == b'd' and not is_moving:
+    if key == b'd' and not is_moving and not is_paused:
         x, y, z = player_pos
         target_x = x - 400
         if abs(target_x) < GRID_WIDTH:
