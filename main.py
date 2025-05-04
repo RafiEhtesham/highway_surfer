@@ -70,6 +70,13 @@ rail_tracks = []
 # Add a global variable to control rail track speed
 rail_speed_multiplier = 2
 
+# Boost-related variables
+is_boosting = False
+boost_start_time = None
+boost_duration = 2.0
+boost_multiplier = 2.0
+original_obstacle_spawn_interval = obstacle_spawn_interval
+
 def draw_shapes():
 
     global GRID_WIDTH, player_pos, is_sliding, slide_rotation_angle   
@@ -204,13 +211,31 @@ def updateDeltaTime():
     delta_time = current_time - last_time
     last_time = current_time
 
+def updateBoost():
+    """
+    Updates the game speed during a boost and reverts it after the boost duration.
+    """
+    global is_boosting, boost_start_time, game_speed, obstacle_spawn_interval
+
+    if not is_boosting:
+        return
+
+    elapsed_time = time.time() - boost_start_time
+    if elapsed_time >= boost_duration:
+        is_boosting = False
+        game_speed /= boost_multiplier
+        obstacle_spawn_interval = original_obstacle_spawn_interval
+        print(f"[DEBUG] Boost ended. game_speed: {game_speed}, obstacle_spawn_interval: {obstacle_spawn_interval}")
+    else:
+        print(f"[DEBUG] Boost active. elapsed_time: {elapsed_time}")
+
 def keyboardListener(key, x, y):
     """
     Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
     """
     global is_jumping, jump_start_time, is_moving, move_start_time, move_target_x, is_sliding, slide_start_time
     global slide_rotation_angle, is_forced_landing, game_over, is_first_person, camera_pos, look_at
-    global game_started, show_start_menu
+    global game_started, show_start_menu, is_boosting, boost_start_time, game_speed, obstacle_spawn_interval
     
     if show_start_menu and key == b' ':
         show_start_menu = False
@@ -273,6 +298,13 @@ def keyboardListener(key, x, y):
             is_sliding = True
             slide_start_time = time.time()
             print(f"[DEBUG] Slide initiated. slide_start_time: {slide_start_time}")
+
+    if key == b'q' and not is_boosting:  # Q key
+        is_boosting = True
+        boost_start_time = time.time()
+        game_speed *= boost_multiplier
+        obstacle_spawn_interval /= boost_multiplier
+        print(f"[DEBUG] Boost activated. game_speed: {game_speed}, obstacle_spawn_interval: {obstacle_spawn_interval}")
 
 def updatePlayerMovement():
     """
@@ -545,6 +577,7 @@ def idle():
     updatePlayerSlide()
     updateObstacles()
     updateRailTracks()
+    updateBoost()
 
     if time.time() - last_obstacle_spawn_time > obstacle_spawn_interval:
         spawnObstacle()
