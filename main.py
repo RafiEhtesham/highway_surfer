@@ -382,7 +382,7 @@ def updatePlayerSlide():
         slide_rotation_angle = min(new_slide_rotation_angle, max_slide_rotation)
         # Smoothly shift the camera down in first-person mode
         if is_first_person:
-            target_camera_z = player_pos[2] + 150  # Shift camera z position down by 50 units
+            target_camera_z = player_pos[2] + 180  # Shift camera z position down by 50 units
             current_camera_x, current_camera_y, current_camera_z = camera_pos
             camera_pos = (current_camera_x, current_camera_y, current_camera_z + (target_camera_z - current_camera_z) * 0.1)
         print(f"[DEBUG] Sliding. slide_rotation_angle: {slide_rotation_angle}")  # Debug
