@@ -86,7 +86,10 @@ def updateObstacles():
     """
     Updates the positions of obstacles and removes those that go off-screen.
     """
-    global obstacles, score, game_over, game_speed, obstacle_spawn_interval
+    global obstacles, score, game_over, game_speed, obstacle_spawn_interval, is_paused
+
+    if is_paused:  # Stop updating obstacles if the game is paused
+        return
 
     # Increase game speed and adjust spawn interval based on score
     if score > 100:
@@ -399,6 +402,7 @@ def mouseListener(button, state, x, y):
             game_speed = 1.0  # Reset game speed
             obstacle_spawn_interval = 1  # Reset obstacle spawn interval
             game_over = False  # Reset game over flag
+            is_paused = False  # Unpause the game
 
             # Switch back to third-person mode if in first-person mode
             if is_first_person:
@@ -450,10 +454,12 @@ def idle():
     """
     global last_obstacle_spawn_time
 
-    if game_over:
-        return  # Stop updating if the game is over
-
     updateDeltaTime()  # Update delta time
+
+    if game_over or is_paused:  # Stop updates if the game is over or paused
+        return
+
+    
     updatePlayerMovement()  # Update the player's left/right movement
     updatePlayerJump()  # Update the player's jump
     updatePlayerSlide()  # Update the player's slide
